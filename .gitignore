@@ -1,0 +1,11 @@
+.DS_Store
+
+.vscode/
+
+.claude/settings.local.json
+
+# ローカル都合の symlink（このrepoで自作スキルを試すため）。配布物ではないのでコミットしない
+.claude/skills/
+
+node_modules/
+
