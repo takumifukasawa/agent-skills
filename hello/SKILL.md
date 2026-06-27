@@ -1,22 +1,22 @@
 ---
 name: hello
-description: skill の仕組みを確認するための最小サンプル。ユーザーが「hello スキルを試す」「skill の動作確認をしたい」「サンプルスキルを呼んで」と言ったときに使う。
+description: A minimal sample skill for verifying how skills work. Use this when the user says "try the hello skill", "check that skills work", or "run the sample skill".
 ---
 
-# hello — 最小サンプルスキル
+# hello — Minimal Sample Skill
 
-これは skill が「どう読み込まれ、どう実行されるか」を体験するためだけの最小スキルです。
+A minimal skill that exists only to demonstrate how a skill gets loaded and executed.
 
-## このスキルが呼ばれたらやること
+## What to do when this skill is invoked
 
-1. 次の一文をそのままユーザーに表示する:
-   > 🎉 hello スキルが読み込まれました。SKILL.md の本文がここで実行されています。
-2. 続けて、いま skill の何が起きたかを1〜2行で説明する:
-   - `description` を見て Claude がこのスキルを選んだこと
-   - 選ばれて初めて、この本文（`SKILL.md`）が読み込まれたこと
-3. 「次は `skill-creator` で自分のスキルを作れます」と案内する。
+1. Show the following line to the user verbatim:
+   > 🎉 The hello skill was loaded. The body of SKILL.md is now running.
+2. Then explain in 1-2 lines what just happened:
+   - Claude selected this skill by reading its `description`.
+   - Only after being selected was this body (`SKILL.md`) loaded.
+3. Suggest: "Next, you can use `skill-creator` to build your own skill."
 
-## メモ（仕組みの要点）
+## Notes (how it works)
 
-- frontmatter の `name` と `description` だけが常時スキャンされる。本文はトリガー時のみ読まれる。
-- だから本文や追加ファイルは長くてよい。description は「いつ使うか」を具体的に書くほど誤発火/取りこぼしが減る。
+- Only the `name` and `description` in the frontmatter are scanned at all times. The body is read only when the skill triggers.
+- That is why the body and any bundled files can be long. Write the `description` to be specific about *when* to use the skill — vague descriptions cause misfires or missed triggers.

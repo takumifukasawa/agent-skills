@@ -1,83 +1,83 @@
 # agent-skills
 
-Claude Code のスキル（Agent Skills）を集約するコレクションリポジトリ。
+A collection repository that aggregates Claude Code skills (Agent Skills).
 
-## スキルとは
+## What a skill is
 
-1ディレクトリ + `SKILL.md` 1枚で完結する、Claude への「いつ・どう動くか」の指示書。
-frontmatter の `description` だけが常時スキャンされ、関連しそうなときに本文が読み込まれて実行される。
+A self-contained directory + a single `SKILL.md` — an instruction sheet telling Claude *when* and *how* to act.
+Only the `description` in the frontmatter is scanned at all times; the body is loaded and executed when the skill looks relevant.
 
 ```markdown
 ---
-name: my-skill          # kebab-case。ディレクトリ名と一致させる
-description: いつこのスキルを使うか（トリガー語を具体的に）
+name: my-skill          # kebab-case; must match the directory name
+description: when to use this skill (be concrete about triggering words)
 ---
 
-# 本文（手順・ルール・知識。呼ばれて初めて読まれるので長くてよい）
+# Body (steps, rules, knowledge — can be long, since it's read only when triggered)
 ```
 
-## リポジトリ構成
+## Repository layout
 
-このリポジトリは **配布元（ソース）**。スキルはルート直下に `<skill-name>/SKILL.md` として並ぶ、ただのフォルダの集まり。
+This repository is a *distribution source*. Skills are a plain collection of folders, each `<skill-name>/SKILL.md` at the root.
 
 ```
 agent-skills/
-├── hello/SKILL.md            # 最小サンプル（仕組み確認用）
-└── skill-creator/SKILL.md    # スキルを作るメタスキル
+├── hello/SKILL.md            # minimal sample (mechanism check)
+└── skill-creator/SKILL.md    # meta-skill that creates skills
 ```
 
-`.claude/skills/` の symlink はローカルで自作スキルを試すための都合であり、`.gitignore` 済み（配布物ではない）。
+The `.claude/skills/` symlinks are only a local convenience for testing skills, and are git-ignored (not distributed).
 
-## スキルの使い方（別PC・別repoへ配布）
+## Using skills (distribute to another PC / repo)
 
-Claude Code は次の場所のスキルをセッション開始時に自動で読み込む:
+Claude Code loads skills from these locations at session start:
 
-| 場所 | スコープ |
+| Location | Scope |
 |---|---|
-| `~/.claude/skills/` | 自分の全プロジェクト・全セッション |
-| `<repo>/.claude/skills/` | そのプロジェクトのみ |
+| `~/.claude/skills/` | all of your projects and sessions |
+| `<repo>/.claude/skills/` | that project only |
 
-別PCや別プロジェクトで使うには、**GitHub から該当フォルダをコピー**する（実体が各PCに置かれる。symlink は不要）。
+To use a skill on another machine or project, **copy the folder from GitHub** (the copy lives on each machine; no symlink needed).
 
 ```bash
-# 単一スキルをコピー（degit。再実行で更新）
+# copy a single skill (degit; re-run to update)
 npx degit takumifukasawa/agent-skills/skill-creator ~/.claude/skills/skill-creator
 
-# まとめて管理したいなら clone（git pull で更新）
+# or clone to manage them together (git pull to update)
 git clone https://github.com/takumifukasawa/agent-skills ~/dev/agent-skills
 cp -R ~/dev/agent-skills/skill-creator ~/.claude/skills/skill-creator
 ```
 
-新しいスキルはセッション開始時に読み込まれる。認識されない場合は新セッション／`/clear` で再読込。
+New skills are loaded at session start. If a skill isn't recognized, start a new session or run `/clear`.
 
-### このリポジトリ内で自作スキルを試す（ローカル開発）
+### Testing a skill inside this repo (local development)
 
-開発中のスキルをこの repo を開いたセッションで試したいときだけ、`.claude/skills/` に symlink を貼る（コミットしない）:
+When you want to try a skill under development in a session opened on this repo, symlink it into `.claude/skills/` (not committed):
 
 ```bash
 ln -snf ../../skill-creator .claude/skills/skill-creator
 ```
 
-## 新しいスキルを作る
+## Creating a new skill
 
-`skill-creator` スキルを呼べば、対話的に規約に沿った雛形を生成・symlink・検証してくれる。
-（「スキルを作りたい」「この作業を skill 化したい」などと言えば発火する）
+Invoke the `skill-creator` skill — it interactively generates a scaffold that follows the conventions, symlinks it, and validates it.
+(It fires when you say things like "I want to create a skill" or "turn this workflow into a skill".)
 
-## 既存スキル
+## Skills
 
-| スキル | 説明 |
+| Skill | Description |
 |---|---|
-| [hello](./hello/SKILL.md) | skill の仕組みを確認する最小サンプル |
-| [skill-creator](./skill-creator/SKILL.md) | スキルを作る／規約に沿わせるメタスキル（公式準拠） |
+| [hello](./hello/SKILL.md) | Minimal sample for checking how skills work |
+| [skill-creator](./skill-creator/SKILL.md) | Meta-skill that creates skills / aligns them with the conventions (official-compliant) |
 
-## 参考
+## References
 
-- [anthropics/skills](https://github.com/anthropics/skills) — 公式コレクション + 仕様(`spec/`) + 雛形(`template/`)。`skills/skill-creator`・`skills/mcp-builder` がメタスキル。本リポジトリの規約はこれに準拠。
-- [mizchi/skills](https://github.com/mizchi/skills) — APM 経由で配布されるコミュニティコレクション。
+- [anthropics/skills](https://github.com/anthropics/skills) — official collection + spec (`spec/`) + template (`template/`). `skills/skill-creator` and `skills/mcp-builder` are meta-skills. The conventions here follow this.
+- [mizchi/skills](https://github.com/mizchi/skills) — community collection distributed via APM.
 
-### 設計原則メモ
+### Design principles
 
-- **Progressive disclosure** … ①metadata(~100語) → ②本文(<500行) → ③同梱リソース(無制限)。重い物ほど外側へ。
-- **同梱リソースの標準ディレクトリ** … `scripts/`（実行コード）/ `references/`（資料）/ `assets/`（テンプレ・画像）。
-- **description は "pushy" に** … 「いつ使うか」の文脈を具体的に。発火はこれだけで決まる。
-- 本文は `ALWAYS`/`NEVER` の硬い命令より「なぜ重要か」を書く方が効く。
+- **Progressive disclosure** — (1) metadata (~100 words) → (2) body (<500 lines) → (3) bundled resources (unlimited). The heavier the content, the further out it lives.
+- **Standard resource directories** — `scripts/` (executable code) / `references/` (docs) / `assets/` (templates, images).
+- **Make the description "pushy"** — be concrete about *when* to use it. Triggering is decided by this alone.
+- Prefer explaining *why* a step matters in the body over rigid `ALWAYS`/`NEVER` commands.

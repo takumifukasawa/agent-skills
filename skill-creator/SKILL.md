@@ -1,112 +1,107 @@
 ---
 name: skill-creator
-description: このリポジトリに新しい Claude Code スキルを作る／既存スキルを規約に沿わせるメタスキル。ユーザーが「スキルを作りたい」「skill を追加」「SKILL.md を書いて」「この作業を skill 化したい」「スキルの雛形が欲しい」と言ったときに使う。
+description: Meta-skill for creating a new Claude Code skill in this repository, or bringing an existing skill in line with the conventions. Use this when the user says "I want to create a skill", "add a skill", "write a SKILL.md", "turn this workflow into a skill", or "I need a skill scaffold".
 ---
 
-# skill-creator — スキルを作るスキル
+# skill-creator — A skill that creates skills
 
-このリポジトリ (`agent-skills`) の規約に沿って、新しいスキルを対話的に生成・検証する。
+Interactively generate and validate a new skill that follows the conventions of this repository (`agent-skills`).
 
-## このリポジトリの構成（前提知識）
+## Repository layout (background)
 
-- スキルの正本は **リポジトリのルート直下** に `<skill-name>/SKILL.md` として置く（コレクション）。
-- それを `.claude/skills/<skill-name>` から **symlink** することで、この repo 自身でも使える。
-- 他プロジェクトで使うときは、その symlink を `~/.claude/skills/` か対象 repo の `.claude/skills/` に貼る or コピーする。
+- The canonical copy of a skill lives at the repo root as `<skill-name>/SKILL.md`. This repo is a *distribution source* — a plain collection of folders.
+- To use a skill on another machine or in another project, copy the folder from GitHub into `~/.claude/skills/` or `<repo>/.claude/skills/` (the copy lives on each machine; no symlink needed).
+- A `.claude/skills/` symlink is only a local convenience for testing skills inside this repo, and is git-ignored.
 
 ```
 agent-skills/
-├── hello/                  ← スキル正本
-│   └── SKILL.md
-├── skill-creator/
-│   └── SKILL.md
-└── .claude/skills/
-    ├── hello -> ../../hello          ← symlink
-    └── skill-creator -> ../../skill-creator
+├── hello/SKILL.md
+└── skill-creator/SKILL.md
 ```
 
-## SKILL.md の規約
+## SKILL.md conventions
 
-frontmatter は **`name` と `description` が必須**。`compatibility`（必要なツールや依存。稀にしか要らない）は任意。
+The frontmatter requires `name` and `description`. `compatibility` (required tools or dependencies — rarely needed) is optional.
 
 ```markdown
 ---
-name: <kebab-case。ディレクトリ名と完全一致させる>
-description: <「何をするか」より「いつ使うか」を具体的に。トリガーになる語・状況を盛り込む>
+name: <kebab-case; must match the directory name>
+description: <when to use it, stated concretely; pack in the triggering words/situations>
 ---
 
-# 本文（手順・ルール・ドメイン知識）
+# Body (steps, rules, domain knowledge)
 ```
 
-ルール:
-- `name` は kebab-case でディレクトリ名と一致。
-- `description` は**トリガー設計が命**。Claude は description だけ見て発火を判断するので、ユーザーが言いそうな語・状況を具体的に列挙する。曖昧だと取りこぼす／誤発火する。"pushy" に——「いつ適用されるか」の文脈を明示的に書く。
-- 本文の指示は **`ALWAYS`/`NEVER` のような硬い大文字命令を多用しない**。「なぜその手順が重要か」を説明する方が Claude はよく従う。
-- 本文は長くてよい（呼ばれて初めて読まれる）。手順・チェックリスト・例を書く。
+Rules:
+- `name` is kebab-case and matches the directory name.
+- The `description` is what makes the skill trigger. Claude decides whether to fire based on the description alone, so list the words and situations the user is likely to say. Be "pushy" — explicitly state the contexts where the skill applies. Vague descriptions cause missed triggers or misfires.
+- Avoid heavy use of rigid all-caps commands like `ALWAYS`/`NEVER` in the body. Explaining *why* a step matters makes Claude follow it more reliably.
+- The body can be long (it is read only when the skill fires). Put steps, checklists, and examples in it.
 
-### Progressive disclosure（3層構造）
+### Progressive disclosure (three layers)
 
-スキルは読み込みコストの異なる3層で設計する。重い物ほど外側へ。
+Design a skill in three layers with different loading costs. The heavier the content, the further out it should live.
 
-1. **metadata（~100語）** — `name` + `description`。常時コンテキストに載る。最小限に。
-2. **SKILL.md 本文（理想 500 行未満）** — スキル発火時に読まれる手順・ルール。
-3. **同梱リソース（容量無制限）** — 必要になったときだけ読まれる。下記の標準ディレクトリに置く。
+1. **Metadata (~100 words)** — `name` + `description`. Always in context. Keep it minimal.
+2. **SKILL.md body (ideally under 500 lines)** — the steps and rules read when the skill fires.
+3. **Bundled resources (unlimited size)** — read only when needed. Put them in the standard directories below.
 
 ```
 skill-name/
-├── SKILL.md          # 必須
-├── scripts/          # 実行コード（決定的な処理はLLMにやらせず script 化）
-├── references/       # 詳細ドキュメント・仕様（本文から「必要なら読め」と参照）
-└── assets/           # テンプレ・アイコン・フォント等
+├── SKILL.md          # required
+├── scripts/          # executable code (script out deterministic work instead of letting the LLM do it)
+├── references/       # detailed docs/specs (referenced from the body: "read this when ...")
+└── assets/           # templates, icons, fonts, etc.
 ```
 
-本文に書ききれない詳細や、毎回は要らない参照資料は `references/` に外出しし、本文からは「〇〇するときは `references/foo.md` を読め」と指す。これで本文（=毎回読まれる層）を薄く保つ。
+Move details that don't fit in the body, or that aren't needed every time, into `references/`, and point to them from the body ("when doing X, read `references/foo.md`"). This keeps the body — the layer read every time — thin.
 
-## 良いスキルの3条件（mizchi のメタスキル論より）
+## Three conditions for a good skill (from mizchi's meta-skill writing)
 
-1. **問題が解決すること** — 具体的なタスクを前に進める。
-2. **再現性があること** — 同じ手順で同じ結果になる。
-3. **新規性があること** — 既存スキルや Claude の素の能力で十分なものは作らない。
+1. **It solves a problem** — it moves a concrete task forward.
+2. **It is reproducible** — the same steps yield the same result.
+3. **It is novel** — don't build something already covered by an existing skill or by Claude's baseline ability.
 
-作る前にこの3つを満たすか自問する。満たさないなら、それは memory やワンショット指示で足りる可能性が高い。
+Ask whether these three hold before building. If not, a memory or a one-shot instruction is probably enough.
 
-## 手順（このスキルが呼ばれたら）
+## Steps (when this skill is invoked)
 
-1. **ヒアリング**（不明な点だけ簡潔に聞く。決め打ちできる所は決める）:
-   - スキル名（kebab-case）
-   - 解決したい具体的なタスク／場面
-   - 発火トリガー（ユーザーがどう言ったとき呼ばれてほしいか）
-   - 本文に入れる手順・知識・禁止事項
-   - 補助ファイル（スクリプト・テンプレ・参照資料）の要否
-2. **3条件チェック** — 問題解決／再現性／新規性を満たすか確認。怪しければユーザーに「skill 化より memory で十分かも」と伝える。
-3. **生成**:
-   - `<repo>/<name>/SKILL.md` を作成（上の規約に従う）。
-   - 必要なら補助ファイルを同ディレクトリに作成。
-4. **symlink**:
+1. **Gather requirements** (ask only about what's unclear; decide what you can):
+   - Skill name (kebab-case)
+   - The concrete task / situation to solve
+   - Triggering conditions (how should the user phrase things to fire it)
+   - The steps, knowledge, and prohibitions for the body
+   - Whether bundled files are needed (scripts, templates, references)
+2. **Three-condition check** — confirm it solves a problem, is reproducible, and is novel. If doubtful, tell the user "a memory may be enough rather than a skill".
+3. **Generate**:
+   - Create `<repo>/<name>/SKILL.md` (following the conventions above).
+   - Create bundled files in the same directory if needed.
+4. **Symlink (for local testing in this repo)**:
    ```bash
    ln -snf ../../<name> .claude/skills/<name>
    ```
-5. **検証**:
-   - frontmatter の `name` がディレクトリ名と一致するか。
-   - `description` にトリガー語が具体的に入っているか。
-   - symlink が張れているか (`ls -la .claude/skills/<name>`)。
-6. **案内**: 「新しいスキルはセッション開始時に読み込まれる。今のセッションで認識されない場合は再起動 (`/clear` や新セッション) が必要」と伝える。
+5. **Validate**:
+   - Does the frontmatter `name` match the directory name?
+   - Does the `description` concretely include triggering words?
+   - Is the symlink in place (`ls -la .claude/skills/<name>`)?
+6. **Inform**: tell the user "new skills are loaded at session start; if this session doesn't see it yet, restart (`/clear` or a new session)".
 
-## 反復サイクル（スキルは一発で完成しない）
+## Iteration cycle (a skill is never done in one shot)
 
-公式が勧める改善ループ:
+The improvement loop the official guidance recommends:
 
 ```
-draft（雛形作成） → test（実際に呼んで動かす） → user review（ユーザーが結果を見る） → improve（description/本文を直す） → 繰り返し
+draft → test (actually invoke it) → user review → improve (tune description/body) → repeat
 ```
 
-特に `description` の発火精度は、実際に色々な言い方で呼んでみないと分からない。取りこぼし／誤発火があればトリガー語を調整する。
+In particular, you can't know how well a `description` triggers until you invoke it with various phrasings. Adjust the triggering words when you see missed triggers or misfires.
 
-### 任意: evals で定量評価
+### Optional: quantitative evaluation with evals
 
-発火や出力の品質を継続的に測りたいスキルには、同ディレクトリに `evals/evals.json` を置く（テスト用プロンプト＋期待される挙動＋アサーション）。テストケースを通して合否を採点し、改善の効果を数値で確認する。小さなスキルには不要。大きく育てる／チームで共有するスキルで検討する。
+For a skill whose triggering or output quality you want to track over time, add `evals/evals.json` to its directory (test prompts + expected behavior + assertions). Run the test cases, grade pass/fail, and confirm the effect of changes numerically. Not needed for small skills — consider it for skills you intend to grow or share with a team.
 
-## アンチパターン（作らない／直す）
+## Anti-patterns (don't build / do fix)
 
-- description が「〜を支援する」だけでトリガー語が無い → いつ呼ばれるか分からず死蔵される。
-- 本文が一般論だけで具体的手順が無い → Claude の素の能力と差が出ない（新規性なし）。
-- 1スキルに無関係な複数機能を詰め込む → 分割する。
+- A description that only says "assists with X" with no triggering words → no one knows when it fires, so it sits dead.
+- A body that is only generalities with no concrete steps → no advantage over Claude's baseline ability (no novelty).
+- Cramming unrelated features into one skill → split it.
