@@ -37,15 +37,21 @@ Claude Code loads skills from these locations at session start:
 | `~/.claude/skills/` | all of your projects and sessions |
 | `<repo>/.claude/skills/` | that project only |
 
-To use a skill on another machine or project, **copy the folder from GitHub** (the copy lives on each machine; no symlink needed).
+**On this machine (all repos):** run `./install.sh` to symlink *every* skill in this repo into `~/.claude/skills/`. Re-run it after adding a new skill — that's the whole workflow.
+
+```bash
+./install.sh        # links every <skill>/SKILL.md into ~/.claude/skills/
+```
+
+**On another machine:** copy the folder from GitHub (the copy lives on each machine; no symlink needed).
 
 ```bash
 # copy a single skill (degit; re-run to update)
 npx degit takumifukasawa/agent-skills/skill-creator ~/.claude/skills/skill-creator
 
-# or clone to manage them together (git pull to update)
+# or clone and run install.sh there
 git clone https://github.com/takumifukasawa/agent-skills ~/dev/agent-skills
-cp -R ~/dev/agent-skills/skill-creator ~/.claude/skills/skill-creator
+cd ~/dev/agent-skills && ./install.sh
 ```
 
 New skills are loaded at session start. If a skill isn't recognized, start a new session or run `/clear`.

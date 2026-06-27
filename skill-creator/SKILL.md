@@ -76,10 +76,9 @@ Ask whether these three hold before building. If not, a memory or a one-shot ins
 3. **Generate**:
    - Create `<repo>/<name>/SKILL.md` (following the conventions above).
    - Create bundled files in the same directory if needed.
-4. **Symlink (for local testing in this repo)**:
-   ```bash
-   ln -snf ../../<name> .claude/skills/<name>
-   ```
+4. **Make it usable**:
+   - For all repos on this machine, run `./install.sh` (symlinks every skill into `~/.claude/skills/`).
+   - For just this repo, symlink locally: `ln -snf ../../<name> .claude/skills/<name>`
 5. **Validate**:
    - Does the frontmatter `name` match the directory name?
    - Does the `description` concretely include triggering words?
