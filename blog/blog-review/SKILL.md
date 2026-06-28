@@ -1,11 +1,11 @@
 ---
 name: blog-review
-description: Review a Hatena-blog article written in Markdown — content, Japanese proofreading/editorial, and Hatena-specific formatting. Supports an iterative review→fix→re-review loop. Use when the user says "ブログをレビューして", "記事を推敲して", "/blog-review <path.md>", "この md（はてなブログ記事）見て", or asks to re-review a revised draft.
+description: Review a Markdown blog article — content, Japanese proofreading/editorial, and publishing-format checks. Platform-agnostic; applies a platform's conventions only if the user names one (e.g. Hatena / Zenn / Qiita / note). Supports an iterative review→fix→re-review loop. Use when the user says "ブログをレビューして", "記事を推敲して", "/blog-review <path.md>", "この md 記事を見て", or asks to re-review a revised draft.
 ---
 
-# blog-review — はてなブログ記事レビュー (Markdown)
+# blog-review — Markdown ブログ記事レビュー
 
-Markdown で書かれたはてなブログ記事を入力に、**内容・日本語・はてな固有**の3面でレビューする。著者は技術ブロガー（CG/WebGL 等）想定。**直す→また見てほしい**の往復（再レビュー）を前提に設計してある。
+Markdown で書かれたブログ記事を入力に、**内容・日本語・公開フォーマット**の3面でレビューする。特定のブログサービスには依存しない（ユーザーがサービス名を挙げたら、その作法を加味する）。著者は技術ブロガー（CG/WebGL 等）想定。**直す→また見てほしい**の往復（再レビュー）を前提に設計してある。
 
 ## 入力
 
@@ -25,13 +25,15 @@ Markdown で書かれたはてなブログ記事を入力に、**内容・日本
 - 表記ゆれ、ですます/である調の混在、半角全角の不統一、送り仮名。
 - 読みやすさ・文体: 冗長表現、一文が長すぎる箇所、受け身の多用、語尾（〜です/〜ます）の単調な連続。**提案ベース**で、著者の文体は尊重する。
 
-### 3. はてな固有（Markdown モード前提）
-- **目次** — 長い記事なら `[:contents]` の有無を確認。
-- **見出し階層** — 本文見出しは `##` から始める（`#` は記事タイトル扱い）。階層の飛ばし(`##`→`####`)がないか。
-- **脚注・引用・リンク** — 脚注記法、引用ブロック、リンクは標準 Markdown `[text](url)`。ブログカード埋め込みは URL を単独行に置く運用。
-- **画像・アイキャッチ** — alt の有無、アイキャッチ（OGP）に使えそうな画像があるか。
-- **カテゴリ/タグ・概要** — 設定漏れがないか（md 本文外の項目は「確認を」と添える）。
-- 注意: 記法は **Markdown モード / はてな記法モード**で挙動が変わる。標準 Markdown を基準に見つつ、固有要素（目次/脚注/ブログカード）で不確実な点は「エディタのモードを確認」と添える。断定しない。
+### 3. 公開フォーマット（プラットフォーム非依存）
+標準 Markdown を基準に、ブログ記事として整っているかを見る。サービス固有の記法は**ユーザーがサービス名を挙げた場合だけ**加味する。
+- **見出し階層** — 本文見出しは `##` から始める（`#` を記事タイトル扱いにするサービスが多い）。`##`→`####` のような階層飛ばしがないか。
+- **目次** — 長い記事なら目次の有無。記法はサービス依存（自動生成のことも）なので、必要性を指摘しつつ具体記法は断定しない。
+- **front matter** — タイトル/カテゴリ/タグ/説明(description)/公開設定など、使っているサービスの front matter 項目に漏れがないか（ファイル先頭に `---` ブロックがあれば確認）。
+- **脚注・引用・リンク** — 標準 Markdown として妥当か。裸の URL、リンク切れの可能性、参照リンクの未定義。
+- **画像** — alt の有無、OGP/アイキャッチに使えそうな画像があるか、相対パスの妥当性。
+- **コードブロック** — 言語指定の有無、長すぎる/折り返しの読みにくさ。
+- **プラットフォーム固有（任意）** — ユーザーがサービス名を挙げたら、その作法を適用する。例: はてな=目次 `[:contents]`・ブログカード（URL 単独行）、Zenn=`---` front matter・`:::message`、Qiita=タグ必須・`:::note`、note=見出し/画像中心。**不確実な記法は「サービスの仕様を確認」と添え、断定しない。**
 
 ## 出力フォーマット（初回レビュー）
 
@@ -47,15 +49,15 @@ Markdown で書かれたはてなブログ記事を入力に、**内容・日本
 - [J1｜中] 箇所:「…」 / 「誤」→「正」
   …
 
-## はてな固有
-- [H1｜低] …
+## 公開フォーマット
+- [F1｜低] …
 
 ## 総評
 - 良い点 / 全体所感
 - 優先対応トップ3: C1, J3, C4 …
 ```
 
-- ID 規則: 内容=C / 日本語=J / はてな=H。優先度=高・中・低。
+- ID 規則: 内容=C / 日本語=J / 公開フォーマット=F。優先度=高・中・低。
 - 箇所は**見出し名か原文引用**で示す（行番号は編集でずれるため引用優先）。
 - 日本語の機械的修正（誤字脱字・表記ゆれ・ですます統一）は「適用候補」としてまとめておく。
 
