@@ -30,7 +30,7 @@ Look back over the conversation and pull out:
    - `name` (kebab-case), `description` with the trigger words the user would actually say next time.
    - Body = the working procedure + a **"Gotchas / what didn't work"** section preserving the failures and their reasons.
    - If a step was deterministic, write it as a `scripts/` file and reference it from the body (progressive disclosure).
-4. **Write** `<repo>/<name>/SKILL.md` (and any `scripts/`), following skill-creator's conventions.
+4. **Write** `<repo>/<category>/<name>/SKILL.md` (and any `scripts/`), following skill-creator's conventions.
 5. **Install & verify**: run `./install.sh`; check `name` matches the directory and the trigger words are concrete.
 6. **Inform**: new skills load at session start (`/clear` or a new session).
 

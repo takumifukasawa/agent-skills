@@ -18,14 +18,17 @@ description: when to use this skill (be concrete about triggering words)
 
 ## Repository layout
 
-This repository is a *distribution source*. Skills are a plain collection of folders, each `<skill-name>/SKILL.md` at the root.
+This repository is a *distribution source*. Skills are organized into category folders, each skill being a `<category>/<skill-name>/SKILL.md`.
 
 ```
 agent-skills/
-└── skill-creator/SKILL.md    # meta-skill that creates skills
+└── meta/                          # category
+    ├── skill-creator/SKILL.md     # create a skill interactively
+    ├── retrospective-codify/SKILL.md  # extract a skill from a session
+    └── double-check/SKILL.md      # independently re-derive a plan/impl (検算)
 ```
 
-The `.claude/skills/` symlinks are only a local convenience for testing skills, and are git-ignored (not distributed).
+Categories are for organizing this repo only. `install.sh` links skills **flat** into `~/.claude/skills/` by their directory name (e.g. `~/.claude/skills/skill-creator`), so the frontmatter `name` matches the skill's own folder name — no category prefix needed. The `.claude/skills/` symlinks are git-ignored.
 
 ## Using skills (distribute to another PC / repo)
 
@@ -45,10 +48,10 @@ Claude Code loads skills from these locations at session start:
 **On another machine:** copy the folder from GitHub (the copy lives on each machine; no symlink needed).
 
 ```bash
-# copy a single skill (degit; re-run to update)
-npx degit takumifukasawa/agent-skills/skill-creator ~/.claude/skills/skill-creator
+# copy a single skill (degit; re-run to update) — note the category in the path
+npx degit takumifukasawa/agent-skills/meta/skill-creator ~/.claude/skills/skill-creator
 
-# or clone and run install.sh there
+# or clone and run install.sh there (links every skill, any category)
 git clone https://github.com/takumifukasawa/agent-skills ~/dev/agent-skills
 cd ~/dev/agent-skills && ./install.sh
 ```
@@ -70,9 +73,13 @@ Invoke the `skill-creator` skill — it interactively generates a scaffold that 
 
 ## Skills
 
+### meta
+
 | Skill | Description |
 |---|---|
-| [skill-creator](./skill-creator/SKILL.md) | Meta-skill that creates skills / aligns them with the conventions (official-compliant) |
+| [skill-creator](./meta/skill-creator/SKILL.md) | Create a skill interactively / align it with the conventions |
+| [retrospective-codify](./meta/retrospective-codify/SKILL.md) | Extract a reusable skill from the current session's trial-and-error |
+| [double-check](./meta/double-check/SKILL.md) | Independently re-derive (検算) a plan or implementation to confirm correctness |
 
 ## References
 

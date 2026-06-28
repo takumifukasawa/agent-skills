@@ -9,15 +9,19 @@ Interactively generate and validate a new skill that follows the conventions of 
 
 ## Repository layout (background)
 
-- The canonical copy of a skill lives at the repo root as `<skill-name>/SKILL.md`. This repo is a *distribution source* — a plain collection of folders.
-- To use a skill on another machine or in another project, copy the folder from GitHub into `~/.claude/skills/` or `<repo>/.claude/skills/` (the copy lives on each machine; no symlink needed).
-- A `.claude/skills/` symlink is only a local convenience for testing skills inside this repo, and is git-ignored.
+- Skills live under a category folder as `<category>/<skill-name>/SKILL.md` (e.g. `meta/skill-creator/`). This repo is a *distribution source*.
+- Categories are for organizing the repo only. `install.sh` links skills **flat** into `~/.claude/skills/` by their own folder name, so the frontmatter `name` matches the skill's directory basename — no category prefix.
+- To use a skill elsewhere, run `./install.sh` (this machine) or copy the folder from GitHub (other machines). A `.claude/skills/` symlink is git-ignored.
 
 ```
 agent-skills/
-├── hello/SKILL.md
-└── skill-creator/SKILL.md
+└── meta/
+    ├── skill-creator/SKILL.md
+    ├── retrospective-codify/SKILL.md
+    └── double-check/SKILL.md
 ```
+
+When creating a new skill, place it under the right category (create a new one if needed, e.g. `cg/`, `webgl/`, `testing/`). Use `meta/` for skills that operate on skills/plans/process.
 
 ## SKILL.md conventions
 
@@ -67,22 +71,20 @@ Ask whether these three hold before building. If not, a memory or a one-shot ins
 ## Steps (when this skill is invoked)
 
 1. **Gather requirements** (ask only about what's unclear; decide what you can):
-   - Skill name (kebab-case)
+   - Skill name (kebab-case) and its category folder (e.g. `meta/`, `cg/`, `testing/`)
    - The concrete task / situation to solve
    - Triggering conditions (how should the user phrase things to fire it)
    - The steps, knowledge, and prohibitions for the body
    - Whether bundled files are needed (scripts, templates, references)
 2. **Three-condition check** — confirm it solves a problem, is reproducible, and is novel. If doubtful, tell the user "a memory may be enough rather than a skill".
 3. **Generate**:
-   - Create `<repo>/<name>/SKILL.md` (following the conventions above).
+   - Create `<repo>/<category>/<name>/SKILL.md` (following the conventions above).
    - Create bundled files in the same directory if needed.
-4. **Make it usable**:
-   - For all repos on this machine, run `./install.sh` (symlinks every skill into `~/.claude/skills/`).
-   - For just this repo, symlink locally: `ln -snf ../../<name> .claude/skills/<name>`
+4. **Make it usable**: run `./install.sh` (links every skill, any category, flat into `~/.claude/skills/`).
 5. **Validate**:
-   - Does the frontmatter `name` match the directory name?
+   - Does the frontmatter `name` match the skill's directory basename?
    - Does the `description` concretely include triggering words?
-   - Is the symlink in place (`ls -la .claude/skills/<name>`)?
+   - Is the symlink in place (`ls -la ~/.claude/skills/<name>`)?
 6. **Inform**: tell the user "new skills are loaded at session start; if this session doesn't see it yet, restart (`/clear` or a new session)".
 
 ## Iteration cycle (a skill is never done in one shot)
