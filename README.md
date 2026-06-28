@@ -22,7 +22,6 @@ This repository is a *distribution source*. Skills are a plain collection of fol
 
 ```
 agent-skills/
-├── hello/SKILL.md            # minimal sample (mechanism check)
 └── skill-creator/SKILL.md    # meta-skill that creates skills
 ```
 
@@ -73,7 +72,6 @@ Invoke the `skill-creator` skill — it interactively generates a scaffold that 
 
 | Skill | Description |
 |---|---|
-| [hello](./hello/SKILL.md) | Minimal sample for checking how skills work |
 | [skill-creator](./skill-creator/SKILL.md) | Meta-skill that creates skills / aligns them with the conventions (official-compliant) |
 
 ## References
