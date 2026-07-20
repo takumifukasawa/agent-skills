@@ -73,13 +73,22 @@ Invoke the `skill-creator` skill — it interactively generates a scaffold that 
 
 ## Skills
 
+SKILL.md itself (frontmatter `description` included) stays English — that's what drives triggering and distribution. The table below adds a one-line Japanese gloss per skill purely so the list is scannable at a glance; it has no effect on triggering.
+
 ### meta
 
 | Skill | Description |
 |---|---|
-| [skill-creator](./meta/skill-creator/SKILL.md) | Create a skill interactively / align it with the conventions |
-| [retrospective-codify](./meta/retrospective-codify/SKILL.md) | Extract a reusable skill from the current session's trial-and-error |
-| [double-check](./meta/double-check/SKILL.md) | Independently re-derive (検算) a plan or implementation to confirm correctness |
+| [skill-creator](./meta/skill-creator/SKILL.md) | Create a skill interactively / align it with the conventions（スキルを対話的に作成／既存スキルを規約に整合させる） |
+| [retrospective-codify](./meta/retrospective-codify/SKILL.md) | Extract a reusable skill from the current session's trial-and-error（セッション内の試行錯誤から再利用可能なスキルを抽出） |
+| [double-check](./meta/double-check/SKILL.md) | Independently re-derive (検算) a plan or implementation to confirm correctness（計画・実装を独立に再導出して正しさを検算） |
+| [task-eta](./meta/task-eta/SKILL.md) | Check progress and estimate time remaining on a background Claude Code task（裏で動いているバックグラウンドタスクの進捗と残り時間を確認） |
+
+### blog
+
+| Skill | Description |
+|---|---|
+| [blog-review](./blog/blog-review/SKILL.md) | Review a Markdown blog article for content, Japanese proofreading, and platform-format checks（Markdown記事を内容・日本語校正・媒体フォーマットの観点でレビュー） |
 
 ## References
 
