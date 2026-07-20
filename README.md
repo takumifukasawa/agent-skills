@@ -90,6 +90,14 @@ SKILL.md itself (frontmatter `description` included) stays English — that's wh
 |---|---|
 | [blog-review](./blog/blog-review/SKILL.md) | Review a Markdown blog article for content, Japanese proofreading, and platform-format checks（Markdown記事を内容・日本語校正・媒体フォーマットの観点でレビュー） |
 
+### gamedev
+
+| Skill | Description |
+|---|---|
+| [game-icon-from-screenshot](./gamedev/game-icon-from-screenshot/SKILL.md) | Generate a square app icon by screenshotting the real running game（実際に動いているゲーム画面をスクショして正方形アイコンを生成） |
+| [game-store-assets](./gamedev/game-store-assets/SKILL.md) | Generate store-listing screenshots and a feature graphic from the real running game（実ゲーム画面からストア掲載用スクショとフィーチャーグラフィックを生成） |
+| [game-gameplay-video](./gamedev/game-gameplay-video/SKILL.md) | Capture real gameplay video of a running web/canvas game as an ad-ready mp4（実際のゲームプレイ映像を広告用mp4としてキャプチャ） |
+
 ## References
 
 - [anthropics/skills](https://github.com/anthropics/skills) — official collection + spec (`spec/`) + template (`template/`). `skills/skill-creator` and `skills/mcp-builder` are meta-skills. The conventions here follow this.
