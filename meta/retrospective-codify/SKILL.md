@@ -25,15 +25,19 @@ Look back over the conversation and pull out:
 ## Procedure
 
 1. **Summarize the candidate** to the user in a few lines: the recurring task, the procedure, the gotchas. Confirm this is worth codifying.
-2. **Apply the three-condition filter** (from skill-creator): does it solve a problem, is it reproducible, is it novel? If it's a one-off or trivially obvious, say so and stop — a memory may be enough instead.
-3. **Draft the skill**:
+2. **Determine the target** (from skill-creator): does this become part of the `agent-skills` repo (shared/distributed), or a project-local skill living only in the project this session was about? This decides which of the checks below apply.
+3. **Apply the three-condition filter** (from skill-creator): does it solve a problem, is it reproducible, is it novel? If it's a one-off or trivially obvious, say so and stop — a memory may be enough instead.
+4. **Draft the skill**:
    - `name` (kebab-case), `description` with the trigger words the user would actually say next time.
    - Body = the working procedure + a **"Gotchas / what didn't work"** section preserving the failures and their reasons.
    - If a step was deterministic, write it as a `scripts/` file and reference it from the body (progressive disclosure).
-   - **Genericize before writing.** A session's trial-and-error happened on one real project — that's exactly what makes it worth codifying, but also means the raw material is soaked in that project's specific names, paths, and object model. Run [skill-creator](../skill-creator/SKILL.md)'s genericity check as you draft, not after: state the working procedure and gotchas in project-neutral terms, then keep the concrete session detail as a clearly labeled "Worked example" rather than letting it read as the general rule.
-4. **Write** `<repo>/<category>/<name>/SKILL.md` (and any `scripts/`), following skill-creator's conventions.
-5. **Install & verify**: run `./install.sh`; check `name` matches the directory and the trigger words are concrete.
-6. **Inform**: new skills load at session start (`/clear` or a new session).
+   - **Genericize before writing — only if targeting `agent-skills`.** A session's trial-and-error happened on one real project — that's exactly what makes it worth codifying, but also means the raw material is soaked in that project's specific names, paths, and object model. Run [skill-creator](../skill-creator/SKILL.md)'s genericity check as you draft, not after: state the working procedure and gotchas in project-neutral terms, then keep the concrete session detail as a clearly labeled "Worked example" rather than letting it read as the general rule. Skip this for a project-local skill — staying tied to that project's real names/paths is correct there, not a defect.
+   - **Public-safety check — always, regardless of target.** A session transcript is exactly where a pasted API key, a real internal URL, or a personal absolute path is most likely to be sitting in plain sight (from a debugging step, an error message, a `curl` command). Before it lands in the skill file, scrub anything from skill-creator's public-safety check — this applies even to a project-local skill, since "it's just this project" doesn't mean the project's own repo is private forever.
+5. **Write**:
+   - For `agent-skills`: `<repo>/<category>/<name>/SKILL.md` (and any `scripts/`), following skill-creator's conventions.
+   - For a project-local skill: `<project>/.claude/skills/<name>/SKILL.md` directly.
+6. **Install & verify**: for `agent-skills`, run `./install.sh`; check `name` matches the directory and the trigger words are concrete. A project-local skill needs no install step.
+7. **Inform**: new skills load at session start (`/clear` or a new session).
 
 ## Notes
 
