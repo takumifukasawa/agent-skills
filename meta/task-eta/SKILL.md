@@ -20,7 +20,7 @@ You already have it: it was returned in the tool result when you (or an earlier 
 
 Call `TaskOutput` with `block: false` and a short `timeout` (e.g. `timeout: 1000`). This returns the current status/output immediately. Using `block: true` (the default) to "check" progress will instead hang until the task actually finishes — the opposite of what an ETA check needs.
 
-For a bash task, prefer `Read` on the output file path returned by the launch (cheaper than repeated `TaskOutput` round-trips). For a `local_agent` task, use the `TaskOutput` result directly — do not `Read` its `.output` file; it's a symlink to the full subagent transcript and will overflow context.
+For a bash task, prefer `Read` on the output file path returned by the launch (cheaper than repeated `TaskOutput` round-trips). For a `remote_agent` task (launched with `isolation: "remote"`), the output file holds the streamed remote session output, same as bash — `Read` it directly. For a `local_agent` task specifically, use the `TaskOutput` result instead — do not `Read` its `.output` file; it's a symlink to the full subagent transcript and will overflow context.
 
 ## Step 3 — estimate from progress signals
 
