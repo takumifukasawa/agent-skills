@@ -45,6 +45,14 @@ Claude Code loads skills from these locations at session start:
 ./install.sh        # links every <skill>/SKILL.md into ~/.claude/skills/
 ```
 
+**Windows (native, e.g. Claude Code running from PowerShell, no WSL):** `install.sh` needs bash. Use `install.ps1` instead:
+
+```powershell
+./install.ps1        # copies every skill into %USERPROFILE%\.claude\skills\
+```
+
+It **copies** rather than symlinks by default, since creating symlinks on Windows normally needs Developer Mode enabled or admin rights — so re-run it after `git pull` or after editing a skill, not just after adding one. Pass `-Symlink` to attempt real symlinks instead (falls back to a copy with a warning if that fails; enable Developer Mode via Settings → Privacy & security → For developers to make it succeed). If you're running Claude Code inside WSL instead, treat it as Linux and use `./install.sh` as usual.
+
 **On another machine:** copy the folder from GitHub (the copy lives on each machine; no symlink needed).
 
 ```bash
