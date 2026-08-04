@@ -7,5 +7,9 @@
 # ローカル都合の symlink（このrepoで自作スキルを試すため）。配布物ではないのでコミットしない
 .claude/skills/
 
+# install.sh / install.ps1 の DEST をマシンごとに固定する個人設定。パスは環境依存なのでコミットしない
+.install.local.sh
+.install.local.ps1
+
 node_modules/
 

@@ -42,14 +42,20 @@ Claude Code loads skills from these locations at session start:
 **On this machine (all repos):** run `./install.sh` to symlink *every* skill in this repo into `~/.claude/skills/`. Re-run it after adding a new skill — that's the whole workflow.
 
 ```bash
-./install.sh        # links every <skill>/SKILL.md into ~/.claude/skills/
+./install.sh                                     # links every <skill>/SKILL.md into ~/.claude/skills/
+DEST="/path/one /path/two" ./install.sh          # link into multiple destinations (e.g. a second Claude profile)
 ```
+
+To avoid typing `DEST=...` every time, drop it in a gitignored `.install.local.sh` next to `install.sh` (`DEST="..."` on its own line) — it's sourced automatically.
 
 **Windows (native, e.g. Claude Code running from PowerShell, no WSL):** `install.sh` needs bash. Use `install.ps1` instead:
 
 ```powershell
-./install.ps1        # copies every skill into %USERPROFILE%\.claude\skills\
+./install.ps1                    # copies every skill into %USERPROFILE%\.claude\skills\
+./install.ps1 -Dest 'C:\one','C:\two'   # copy into multiple destinations
 ```
+
+Same idea for a persistent default: a gitignored `.install.local.ps1` next to `install.ps1` (setting `$Dest = @('...', '...')`) is dot-sourced automatically when `-Dest` isn't passed.
 
 It **copies** rather than symlinks by default, since creating symlinks on Windows normally needs Developer Mode enabled or admin rights — so re-run it after `git pull` or after editing a skill, not just after adding one. Pass `-Symlink` to attempt real symlinks instead (falls back to a copy with a warning if that fails; enable Developer Mode via Settings → Privacy & security → For developers to make it succeed). If you're running Claude Code inside WSL instead, treat it as Linux and use `./install.sh` as usual.
 

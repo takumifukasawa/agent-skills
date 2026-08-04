@@ -1,7 +1,8 @@
 #!/usr/bin/env pwsh
 <#
-Copies every skill in this repo into %USERPROFILE%\.claude\skills\ (or -Dest),
-so they are available in all of your Claude Code sessions on this machine.
+Copies every skill in this repo into %USERPROFILE%\.claude\skills\ (or one or
+more -Dest paths), so they are available in all of your Claude Code sessions
+on this machine.
 
 A "skill" is any directory containing a SKILL.md, at any depth (e.g.
 meta/skill-creator/SKILL.md). Skills are installed FLAT into the destination
@@ -15,20 +16,38 @@ admin rights. That means: re-run this after `git pull` or after editing a
 skill, not only after adding a new one.
 
 Usage:
-  ./install.ps1                       # copy into %USERPROFILE%\.claude\skills\
-  ./install.ps1 -Dest 'C:\some\path'  # copy into a custom destination
-  ./install.ps1 -Symlink              # attempt real symlinks instead of copies
-                                       # (needs Developer Mode: Settings ->
-                                       # Privacy & security -> For developers;
-                                       # falls back to a copy with a warning
-                                       # if symlink creation fails)
+  ./install.ps1                              # copy into %USERPROFILE%\.claude\skills\
+  ./install.ps1 -Dest 'C:\some\path'         # copy into a custom destination
+  ./install.ps1 -Dest 'C:\one','C:\two'      # copy into multiple destinations
+  ./install.ps1 -Symlink                     # attempt real symlinks instead of copies
+                                              # (needs Developer Mode: Settings ->
+                                              # Privacy & security -> For developers;
+                                              # falls back to a copy with a warning
+                                              # if symlink creation fails)
+
+To avoid passing -Dest every time, put it in a gitignored .install.local.ps1
+next to this script instead, e.g.:
+  $Dest = @('C:\Users\me\.claude\skills', 'C:\Users\me\.claude-personal\skills')
+It's dot-sourced automatically below when -Dest isn't passed.
 #>
 param(
-    [string]$Dest = (Join-Path $env:USERPROFILE ".claude\skills"),
+    [string[]]$Dest,
     [switch]$Symlink
 )
 
-New-Item -ItemType Directory -Force -Path $Dest | Out-Null
+if (-not $PSBoundParameters.ContainsKey('Dest')) {
+    $localConfig = Join-Path $PSScriptRoot '.install.local.ps1'
+    if (Test-Path $localConfig) {
+        . $localConfig
+    }
+}
+if (-not $Dest) {
+    $Dest = @(Join-Path $env:USERPROFILE ".claude\skills")
+}
+
+foreach ($d in $Dest) {
+    New-Item -ItemType Directory -Force -Path $d | Out-Null
+}
 
 $seen = @{}
 $count = 0
@@ -45,26 +64,28 @@ Get-ChildItem -Path $PSScriptRoot -Recurse -Filter SKILL.md -File |
         }
         $seen[$name] = $true
 
-        $target = Join-Path $Dest $name
-        if (Test-Path $target) {
-            Remove-Item $target -Recurse -Force
-        }
-
-        if ($Symlink) {
-            try {
-                New-Item -ItemType SymbolicLink -Path $target -Target $skillDir.FullName -ErrorAction Stop | Out-Null
-                Write-Host "linked: $name -> $($skillDir.FullName)"
-            } catch {
-                Write-Warning "symlink failed for '$name' ($($_.Exception.Message)) -- falling back to copy. Enable Developer Mode (Settings > Privacy & security > For developers) to allow symlinks."
-                Copy-Item $skillDir.FullName $target -Recurse -Force
-                Write-Host "copied: $name -> $($skillDir.FullName)"
+        foreach ($d in $Dest) {
+            $target = Join-Path $d $name
+            if (Test-Path $target) {
+                Remove-Item $target -Recurse -Force
             }
-        } else {
-            Copy-Item $skillDir.FullName $target -Recurse -Force
-            Write-Host "copied: $name -> $($skillDir.FullName)"
+
+            if ($Symlink) {
+                try {
+                    New-Item -ItemType SymbolicLink -Path $target -Target $skillDir.FullName -ErrorAction Stop | Out-Null
+                    Write-Host "linked: $name -> $($skillDir.FullName) ($d)"
+                } catch {
+                    Write-Warning "symlink failed for '$name' ($($_.Exception.Message)) -- falling back to copy. Enable Developer Mode (Settings > Privacy & security > For developers) to allow symlinks."
+                    Copy-Item $skillDir.FullName $target -Recurse -Force
+                    Write-Host "copied: $name -> $($skillDir.FullName) ($d)"
+                }
+            } else {
+                Copy-Item $skillDir.FullName $target -Recurse -Force
+                Write-Host "copied: $name -> $($skillDir.FullName) ($d)"
+            }
         }
         $count++
     }
 
-Write-Host "done. $count skill(s) installed into $Dest"
+Write-Host "done. $count skill(s) installed into: $($Dest -join ', ')"
 Write-Host "Start a new session (or /clear) for Claude Code to pick them up."
