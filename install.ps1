@@ -9,21 +9,27 @@ meta/skill-creator/SKILL.md). Skills are installed FLAT into the destination
 by their directory name -- categories are for organizing this repo, not part
 of the installed name.
 
-This is the Windows counterpart to install.sh. Unlike install.sh (which
-symlinks, so edits in this repo show up immediately), this COPIES by default,
-because creating symlinks on Windows normally needs Developer Mode enabled or
-admin rights. That means: re-run this after `git pull` or after editing a
-skill, not only after adding a new one.
+This is the Windows counterpart to install.sh. It COPIES by default, so re-run
+it after `git pull` or after editing a skill, not only after adding a new one.
+
+Pass -Link to get install.sh's behaviour instead: each skill is linked, so
+edits in this repo show up immediately and you only re-run when you ADD a
+skill. Links are directory junctions, which -- unlike symlinks -- need neither
+admin rights nor Developer Mode, and work across drives (repo on D:, skills on
+C:). It falls back to a symlink and then to a copy if a junction can't be made.
 
 Usage:
   ./install.ps1                              # copy into %USERPROFILE%\.claude\skills\
   ./install.ps1 -Dest 'C:\some\path'         # copy into a custom destination
   ./install.ps1 -Dest 'C:\one','C:\two'      # copy into multiple destinations
-  ./install.ps1 -Symlink                     # attempt real symlinks instead of copies
-                                              # (needs Developer Mode: Settings ->
-                                              # Privacy & security -> For developers;
-                                              # falls back to a copy with a warning
-                                              # if symlink creation fails)
+  ./install.ps1 -Link                        # link instead of copy (see above)
+
+If PowerShell refuses to run this file at all ("スクリプトの実行が無効になっている
+ため" / UnauthorizedAccess), your execution policy is Restricted. Allow local
+scripts once with:
+  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+or run this file without changing anything:
+  powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 To avoid passing -Dest every time, put it in a gitignored .install.local.ps1
 next to this script instead, e.g.:
@@ -32,7 +38,8 @@ It's dot-sourced automatically below when -Dest isn't passed.
 #>
 param(
     [string[]]$Dest,
-    [switch]$Symlink
+    [Alias('Symlink')]
+    [switch]$Link
 )
 
 if (-not $PSBoundParameters.ContainsKey('Dest')) {
@@ -47,6 +54,21 @@ if (-not $Dest) {
 
 foreach ($d in $Dest) {
     New-Item -ItemType Directory -Force -Path $d | Out-Null
+}
+
+# Deletes a previously installed skill. A junction/symlink left by an earlier
+# -Link run must be unlinked, NOT removed with -Recurse: Windows PowerShell 5.1
+# happily recurses through a reparse point and would delete this repo's files.
+function Remove-Installed {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) { return }
+    $item = Get-Item $Path -Force
+    if ($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+        [System.IO.Directory]::Delete($item.FullName)
+    } else {
+        Remove-Item $Path -Recurse -Force
+    }
 }
 
 $seen = @{}
@@ -66,16 +88,26 @@ Get-ChildItem -Path $PSScriptRoot -Recurse -Filter SKILL.md -File |
 
         foreach ($d in $Dest) {
             $target = Join-Path $d $name
-            if (Test-Path $target) {
-                Remove-Item $target -Recurse -Force
-            }
+            Remove-Installed $target
 
-            if ($Symlink) {
-                try {
-                    New-Item -ItemType SymbolicLink -Path $target -Target $skillDir.FullName -ErrorAction Stop | Out-Null
-                    Write-Host "linked: $name -> $($skillDir.FullName) ($d)"
-                } catch {
-                    Write-Warning "symlink failed for '$name' ($($_.Exception.Message)) -- falling back to copy. Enable Developer Mode (Settings > Privacy & security > For developers) to allow symlinks."
+            if ($Link) {
+                # Junction first: no admin rights, no Developer Mode, works across drives.
+                $kind = $null
+                $err = $null
+                foreach ($k in 'Junction', 'SymbolicLink') {
+                    try {
+                        New-Item -ItemType $k -Path $target -Target $skillDir.FullName -ErrorAction Stop | Out-Null
+                        $kind = $k
+                        break
+                    } catch {
+                        $err = $_.Exception.Message
+                    }
+                }
+
+                if ($kind) {
+                    Write-Host "linked ($kind): $name -> $($skillDir.FullName) ($d)"
+                } else {
+                    Write-Warning "link failed for '$name' ($err) -- falling back to copy."
                     Copy-Item $skillDir.FullName $target -Recurse -Force
                     Write-Host "copied: $name -> $($skillDir.FullName) ($d)"
                 }
@@ -87,5 +119,9 @@ Get-ChildItem -Path $PSScriptRoot -Recurse -Filter SKILL.md -File |
         $count++
     }
 
-Write-Host "done. $count skill(s) installed into: $($Dest -join ', ')"
+$how = if ($Link) { 'linked' } else { 'copied' }
+Write-Host "done. $count skill(s) $how into: $($Dest -join ', ')"
+if (-not $Link) {
+    Write-Host "Tip: ./install.ps1 -Link installs junctions instead, so edits here apply without re-running."
+}
 Write-Host "Start a new session (or /clear) for Claude Code to pick them up."

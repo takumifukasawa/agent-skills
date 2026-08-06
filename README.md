@@ -51,13 +51,16 @@ To avoid typing `DEST=...` every time, drop it in a gitignored `.install.local.s
 **Windows (native, e.g. Claude Code running from PowerShell, no WSL):** `install.sh` needs bash. Use `install.ps1` instead:
 
 ```powershell
-./install.ps1                    # copies every skill into %USERPROFILE%\.claude\skills\
-./install.ps1 -Dest 'C:\one','C:\two'   # copy into multiple destinations
+./install.ps1                           # copies every skill into %USERPROFILE%\.claude\skills\
+./install.ps1 -Link                     # link instead of copy — edits apply without re-running
+./install.ps1 -Dest 'C:\one','C:\two'   # install into multiple destinations
 ```
 
 Same idea for a persistent default: a gitignored `.install.local.ps1` next to `install.ps1` (setting `$Dest = @('...', '...')`) is dot-sourced automatically when `-Dest` isn't passed.
 
-It **copies** rather than symlinks by default, since creating symlinks on Windows normally needs Developer Mode enabled or admin rights — so re-run it after `git pull` or after editing a skill, not just after adding one. Pass `-Symlink` to attempt real symlinks instead (falls back to a copy with a warning if that fails; enable Developer Mode via Settings → Privacy & security → For developers to make it succeed). If you're running Claude Code inside WSL instead, treat it as Linux and use `./install.sh` as usual.
+It **copies** by default, so re-run it after `git pull` or after editing a skill, not just after adding one. Pass `-Link` to get `install.sh`'s behaviour instead — you then only re-run when you *add* a skill. Links are directory junctions, which need neither admin rights nor Developer Mode and work across drives (repo on `D:`, skills on `C:`); it falls back to a symlink and then to a copy if a junction can't be created. If you're running Claude Code inside WSL instead, treat it as Linux and use `./install.sh` as usual.
+
+If PowerShell refuses to run the file at all (`スクリプトの実行が無効になっているため` / `UnauthorizedAccess`), your execution policy is `Restricted`. Allow local scripts once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or run it without changing anything via `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
 
 **On another machine:** copy the folder from GitHub (the copy lives on each machine; no symlink needed).
 
