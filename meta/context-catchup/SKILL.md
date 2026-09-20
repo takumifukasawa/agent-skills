@@ -1,9 +1,11 @@
 ---
 name: context-catchup
-description: 新しいセッションの冒頭で、プロジェクトの docs・assistant memory・VCS 状態から「現在地(何が済み / 何が途中 / 次の一手)」を安く読み込み、要約ブリーフィングとして返す。発火例 - "docs やメモリを読んでコンテクストを理解して", "背景を把握して", "現状/現在地を教えて", "前回の続きから", "引き継ぎ(ハンドオフ)を読んで", "キャッチアップして", "この repo の状況を掴んで", "catch me up", "load project context", "resume where we left off", "what were we doing"。全 doc を頭から読むのではなく 索引 → resume point → VCS 実態照合 の順で集め、memory の主張を現物で検証してから報告する。長い中断を挟んだ再開時や、複数タスクが並行していて何から手を付けるか決めたい時に使う。
+description: ハーネス（agent-harness）を導入していないリポジトリで使う。導入済みのリポジトリでは同じ役割の session-catchup があるのでそちらを使う（docs/README.md → docs/handoff.md という決まった置き場を前提に、より安く読める）。新しいセッションの冒頭で、プロジェクトの docs・assistant memory・VCS 状態から「現在地(何が済み / 何が途中 / 次の一手)」を安く読み込み、要約ブリーフィングとして返す。発火例 - "docs やメモリを読んでコンテクストを理解して", "背景を把握して", "現状/現在地を教えて", "前回の続きから", "引き継ぎ(ハンドオフ)を読んで", "キャッチアップして", "この repo の状況を掴んで", "catch me up", "load project context", "resume where we left off", "what were we doing"。全 doc を頭から読むのではなく 索引 → resume point → VCS 実態照合 の順で集め、memory の主張を現物で検証してから報告する。長い中断を挟んだ再開時や、複数タスクが並行していて何から手を付けるか決めたい時に使う。
 ---
 
 # context-catchup — docs と memory から「現在地」を読み込む
+
+> **どちらを使うか**: このスキルは**置き場が決まっていないリポジトリ**向けに、docs・assistant memory・VCS を横断して探す。`.harness/` と `docs/handoff.md` があるリポジトリ（agent-harness 導入済み）では `session-catchup` を使う。索引 → handoff → VCS の順が決まっているぶん安く済む。
 
 セッションをまたぐと文脈は失われる。一方でプロジェクトには、過去の自分が残した docs・assistant memory・コミット履歴という**再構築用の素材**が既にある。このスキルは、それを**安く・順序立てて・実態と照合しながら**読み込み、次の一手を決められる形のブリーフィングにする。
 

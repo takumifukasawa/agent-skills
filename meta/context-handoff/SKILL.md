@@ -1,9 +1,11 @@
 ---
 name: context-handoff
-description: セッションを終える / 立ち上げ直す前に、プロジェクトの docs・assistant memory・VCS を「次のセッションが正しく再開できる状態」に最新化して引き継ぎを残す。発火例 - "セッション立ち上げ直したいから docs とメモリを最新化して", "引き継ぎを書いて/残して", "メモリを最新版にして", "docs とメモリを確認して最新にして", "セッション終了の準備をして", "wrap up this session", "write a handoff", "update memory/docs before restart", "/clear する前に状態を残して"。context-catchup（読み込み側）の対になる書き込み側スキル: 索引と本文の食い違い・未コミットの正史 doc・化石化した "as of" 日付を掃き出し、resume point を明記してから報告する。
+description: ハーネス（agent-harness）を導入していないリポジトリで使う。導入済みのリポジトリでは同じ役割の session-handoff があるのでそちらを使う（docs/handoff.md という決まった書き先があり、harness status の drift 報告まで含む）。セッションを終える / 立ち上げ直す前に、プロジェクトの docs・assistant memory・VCS を「次のセッションが正しく再開できる状態」に最新化して引き継ぎを残す。発火例 - "セッション立ち上げ直したいから docs とメモリを最新化して", "引き継ぎを書いて/残して", "メモリを最新版にして", "docs とメモリを確認して最新にして", "セッション終了の準備をして", "wrap up this session", "write a handoff", "update memory/docs before restart", "/clear する前に状態を残して"。context-catchup（読み込み側）の対になる書き込み側スキル: 索引と本文の食い違い・未コミットの正史 doc・化石化した "as of" 日付を掃き出し、resume point を明記してから報告する。
 ---
 
 # context-handoff — 次のセッションのために docs と memory を最新化する
+
+> **どちらを使うか**: このスキルは**書き先が決まっていないリポジトリ**向けに、docs・assistant memory・VCS を横断して整える。`.harness/` と `docs/handoff.md` があるリポジトリ（agent-harness 導入済み）では `session-handoff` を使う。書き先が `docs/handoff.md` に決まっていて、`harness status` の drift 報告まで手順に入っている。
 
 セッションをまたぐと文脈は失われる。[context-catchup](../context-catchup/SKILL.md) はそれを**読む側**から解決するが、読む素材が古い・矛盾している・そもそもコミットされていないなら、どれだけ上手に読んでも誤った現在地に着地する。このスキルは**書く側**、つまりセッションを畳む前に素材そのものを信頼できる状態に直す。
 
