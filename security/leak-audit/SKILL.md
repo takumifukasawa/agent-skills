@@ -91,8 +91,24 @@ ref names (branches, tags, remote branches), cherry-pick provenance lines (`(che
 points at a private repo), lockfile registry URLs that are not the public registry, and INFO lists of commit time zones,
 author / committer identities and commits made in the GitHub web UI. Exit 1 means hits.
 
-If `gitleaks` or `trufflehog` is installed, also run it (`gitleaks git -v .`) — they know hundreds of vendor token
-formats; this script knows the common ones plus the user's private terms, which those tools do not.
+Then run the established scanners alongside it — they know hundreds of vendor token formats, scan.py knows the
+common ones plus everything that is not a token (private terms, paths, links, refs, messages):
+
+```bash
+python ${CLAUDE_SKILL_DIR}/scripts/external.py --history    # and without --history for the working tree
+```
+
+It runs whichever of **gitleaks** (vendor rules + entropy, redacted output), **trufflehog** (offline by default)
+and **exiftool** (media metadata) are installed, and names the missing ones with install commands
+(`brew install gitleaks trufflehog exiftool` / `scoop install ...` on Windows). Offer to install missing ones;
+a missing tool is "not checked", never "clean".
+
+When trufflehog or gitleaks finds a credential, `--verify` lets trufflehog ask the issuer whether it is **live**.
+That decides how urgent rotation is, but it sends the candidate secret to the issuer's API — ask the user first.
+
+On GitHub, also check the repo's own protection: `gh api repos/<owner>/<repo> --jq .security_and_analysis`.
+Secret scanning and push protection are free for public repos; suggest enabling any that are disabled (it is a
+settings change on the user's account — ask before changing it).
 
 The script does not see everything. Also check, by hand:
 - **GitHub-side metadata**: PR titles, bodies and branch names, issues, releases

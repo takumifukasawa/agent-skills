@@ -124,6 +124,13 @@ published too; a `commit-msg` hook can grep the message file against the same te
 
 Other sources to close:
 
+- **GitHub secret scanning + push protection** (the repo's security settings page; free for public repos): GitHub
+  then rejects pushes containing known token formats and alerts on ones already in history. Check with
+  `gh api repos/<owner>/<repo> --jq .security_and_analysis`. "Non-provider patterns" (generic passwords, private
+  keys) and "validity checks" are separate toggles.
+- **gitleaks as a hook**: `gitleaks git --pre-commit --staged --redact` in the pre-commit hook next to scan.py
+  catches vendor tokens scan.py does not know.
+
 - **GitHub web commits**: Settings → Emails → "Keep my email addresses private" (and block pushes that expose
   it), or make a personal address the primary one. Otherwise web merges author commits with the primary address.
 - **Agent session trailers**: some coding agents append a session link trailer (e.g. `Claude-Session: <url>`) to
