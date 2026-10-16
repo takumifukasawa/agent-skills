@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audio test</title>
+<style>
+  body { margin: 0; padding: 16px; background: #102; color: #def; font: 16px/1.5 system-ui, sans-serif; }
+  button { display: block; width: 100%; margin: 8px 0; padding: 14px; font-size: 16px; border: 0; border-radius: 8px; background: #2a4a7a; color: #fff; }
+  button.on { background: #c64; }
+  pre { white-space: pre-wrap; font-size: 13px; background: #0008; padding: 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<!-- Copy into the dev server's public folder (or serve this folder) and open it on the phone: does Web Audio crackle on this device with no graphics at all? -->
+<h3>音だけのテスト（描画なし）</h3>
+<button data-k="sine">① 正弦波 1 音（いちばん軽い）</button>
+<button data-k="chord">② 和音（のこぎり波 6 音 + フィルター）</button>
+<button data-k="reverb">③ 和音 + 2.8 秒の残響</button>
+<button data-k="stop">止める</button>
+<label><input type="checkbox" id="playback"> バッファを大きくする（latencyHint: playback）</label>
+<div id="pad" style="height:160px;margin:12px 0;border:2px dashed #6a8;border-radius:8px;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none">鳴らしたまま、ここをタップ（音は変わりません）<br>タップ <span id="taps">0</span> 回</div>
+<pre id="info">ボタンを押すと鳴ります</pre>
+<script>
+let ctx = null, nodes = [];
+const info = document.getElementById("info");
+// Fade out over 50 ms before stopping, so switching makes no click of its own.
+function stop() {
+  const old = nodes; nodes = [];
+  const out = old[0];
+  if (out && ctx) { out.gain.setTargetAtTime(0, ctx.currentTime, 0.015); }
+  setTimeout(() => old.forEach(n => { try { n.stop ? n.stop() : n.disconnect(); } catch {} }), 150);
+}
+function context() {
+  const hint = document.getElementById("playback").checked ? "playback" : "interactive";
+  if (ctx && ctx.__hint !== hint) { ctx.close(); ctx = null; }
+  if (!ctx) { ctx = new AudioContext({latencyHint: hint}); ctx.__hint = hint; }
+  return ctx;
+}
+function impulse(c, s) {
+  const n = Math.floor(c.sampleRate * s), b = c.createBuffer(2, n, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3); }
+  return b;
+}
+function play(k) {
+  stop();
+  if (k === "stop") return;
+  const c = context(); c.resume();
+  const out = c.createGain(); out.gain.setValueAtTime(0, c.currentTime); out.gain.setTargetAtTime(0.25, c.currentTime, 0.015); out.connect(c.destination); nodes.push(out);
+  if (k === "sine") {
+    const o = c.createOscillator(); o.frequency.value = 330; o.connect(out); o.start(); nodes.push(o);
+  } else {
+    const f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 900; f.connect(out); nodes.push(f);
+    if (k === "reverb") { const r = c.createConvolver(); r.buffer = impulse(c, 2.8); const w = c.createGain(); w.gain.value = 0.45; f.connect(r).connect(w).connect(out); nodes.push(r, w); }
+    for (const hz of [130.8, 164.8, 196, 261.6, 329.6, 392]) {
+      const o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = hz; o.detune.value = Math.random() * 10 - 5;
+      const g = c.createGain(); g.gain.value = 0.08; o.connect(g).connect(f); o.start(); nodes.push(o, g);
+    }
+  }
+  document.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.k === k));
+}
+let taps = 0;
+document.getElementById("pad").addEventListener("pointerdown", () => { document.getElementById("taps").textContent = ++taps; });
+document.querySelectorAll("button").forEach(b => b.onclick = () => play(b.dataset.k));
+setInterval(() => {
+  if (!ctx) return;
+  info.textContent = `${ctx.sampleRate}Hz  base ${Math.round(ctx.baseLatency * 1000)}ms  out ${Math.round((ctx.outputLatency || 0) * 1000)}ms  hint ${ctx.__hint}  ${ctx.state}\n${navigator.userAgent}`;
+}, 500);
+</script>
+</body>
+</html>

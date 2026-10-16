@@ -1,0 +1,31 @@
+{
+  "name": "takumifukasawa-agent-skills",
+  "owner": {"name": "takumifukasawa"},
+  "metadata": {"description": "Personal Claude Code skills, one plugin per category"},
+  "plugins": [
+    {
+      "name": "meta",
+      "source": "./meta",
+      "description": "Skills about working with skills and agents: create a skill, codify a session, double-check, catch up and hand off, estimate a task, split models between orchestrator and subagents",
+      "skills": ["./skill-creator", "./retrospective-codify", "./double-check", "./context-catchup", "./context-handoff", "./task-eta", "./orchestrator-model-split"]
+    },
+    {
+      "name": "cosense",
+      "source": "./cosense",
+      "description": "Cosense (Scrapbox) skills: add a term to your vocabulary stock",
+      "skills": ["./vocab-add"]
+    },
+    {
+      "name": "blog",
+      "source": "./blog",
+      "description": "Blog writing skills",
+      "skills": ["./blog-review"]
+    },
+    {
+      "name": "gamedev",
+      "source": "./gamedev",
+      "description": "Game dev skills: app icon, store assets, gameplay and ad video, version history, audio crackle and render cost on phones, self-verification in the Unity Editor",
+      "skills": ["./game-icon-from-screenshot", "./game-store-assets", "./game-gameplay-video", "./version-history-update", "./mobile-audio-render", "./verify-in-unity"]
+    }
+  ]
+}

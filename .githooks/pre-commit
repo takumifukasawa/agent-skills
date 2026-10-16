@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# This repo is public: refuse a commit that adds personal / company / project-identifying lines or secrets.
+# Enabled by `git config core.hooksPath .githooks` (install.sh sets it). See scripts/check-public.sh.
+exec "$(git rev-parse --show-toplevel)/scripts/check-public.sh"

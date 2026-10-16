@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# The commit message is published as well: same scan as pre-commit (scripts/check-public.sh).
+exec "$(git rev-parse --show-toplevel)/scripts/check-public.sh" --msg "$1"

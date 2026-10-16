@@ -1,0 +1,328 @@
+<title>/*TITLE*/</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* Store-asset picker (game-store-assets skill). Layout: a contact-sheet bench. Candidates sit in grids like prints on
+   a light table; the chosen set collects in a tray at the top. Built by scripts/build_picker.py from a JSON spec. */
+:root {
+  --bg: #e7ecef;
+  --surface: #f6f8f9;
+  --ink: #1d2a30;
+  --muted: #5b6b73;
+  --line: #c6d1d7;
+  --accent: #e0a514;
+  --accent-ink: #3b2a00;
+  --pick: #1e8fa8;
+  --pick-soft: #d3ecf2;
+  --warn: #c0392b;
+  --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191c; --surface: #1f2529; --ink: #e6ecef; --muted: #93a3ab; --line: #333d43;
+    --accent: #f0b52a; --accent-ink: #251a00; --pick: #4cc3dc; --pick-soft: #173a43; --warn: #ff7b6b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191c; --surface: #1f2529; --ink: #e6ecef; --muted: #93a3ab; --line: #333d43;
+  --accent: #f0b52a; --accent-ink: #251a00; --pick: #4cc3dc; --pick-soft: #173a43; --warn: #ff7b6b; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(26px, 4vw, 36px); line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin: 0; text-wrap: balance; }
+.lead { margin: 0; color: var(--muted); max-width: 62ch; }
+.status { font-family: var(--font-data); font-size: 12px; color: var(--muted); }
+.status[data-kind="ok"] { color: var(--pick); }
+.status[data-kind="warn"] { color: var(--warn); }
+
+section { display: grid; gap: 14px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.sec-head p { margin: 0; color: var(--muted); font-size: 13px; }
+.count { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+button.ghost { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+button.ghost:hover { border-color: var(--pick); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, .card:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
+
+.tray { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 16px; }
+.stack { display: grid; gap: 16px; }
+.stack.wide { gap: 40px; }
+.tray-row { display: grid; gap: 8px; min-width: 0; }
+.tray-label { font-size: 13px; font-weight: 700; }
+.tray-items { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; min-height: 40px; }
+.tray-item { flex: 0 0 auto; display: grid; gap: 4px; }
+.tray-item img { display: block; border-radius: 4px; object-fit: cover; height: 150px; width: auto; max-width: 100%; }
+.tray-item .ctl { display: flex; justify-content: space-between; align-items: center; gap: 4px; font-family: var(--font-data); font-size: 12px; }
+.tray-item .ctl button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 4px; width: 26px; height: 22px; cursor: pointer; padding: 0; }
+.tray-item .ctl button:disabled { opacity: .35; cursor: default; }
+.tray-text { white-space: pre-wrap; font-size: 14px; max-width: 70ch; }
+.empty { color: var(--muted); font-size: 13px; align-self: center; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 24px; }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+legend { font-size: 13px; font-weight: 700; padding: 0; margin-bottom: 4px; }
+.radio { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+textarea { font: inherit; font-size: 14px; width: 100%; box-sizing: border-box; min-height: 64px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical; }
+.fb { display: grid; gap: 6px; }
+.fb label { font-size: 13px; font-weight: 700; }
+
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(var(--min-col, 180px), 1fr)); }
+.card { position: relative; display: grid; gap: 6px; align-content: start; background: var(--surface); border: 2px solid transparent; border-radius: 8px; padding: 6px; cursor: pointer; transition: border-color .12s; }
+.card:hover { border-color: var(--line); }
+.card[aria-checked="true"] { border-color: var(--pick); background: var(--pick-soft); }
+.card img { width: 100%; display: block; border-radius: 4px; object-fit: cover; aspect-ratio: var(--aspect, auto); }
+.meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0 2px; font-size: 13px; min-width: 0; }
+.meta .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.no { font-family: var(--font-data); font-weight: 700; color: var(--muted); margin-right: 6px; }
+.rec { flex: 0 0 auto; font-size: 11px; font-weight: 700; background: var(--accent); color: var(--accent-ink); padding: 1px 7px; border-radius: 999px; }
+.badge { position: absolute; top: 12px; left: 12px; min-width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center; font-family: var(--font-data); font-weight: 700; font-size: 14px; background: var(--pick); color: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / .3); }
+.zoom { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 6px; border: 0; background: rgb(0 0 0 / .55); color: #fff; font-size: 15px; cursor: zoom-in; display: grid; place-items: center; }
+
+.copy-list { display: grid; gap: 10px; }
+.copy { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 10px 84px 10px 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: var(--bg); }
+.copy:has(input:checked) { border-color: var(--pick); background: var(--pick-soft); }
+.copy input { margin-top: 5px; }
+.copy .en { font-weight: 500; white-space: pre-wrap; }
+.copy .ja { color: var(--muted); font-size: 13px; white-space: pre-wrap; grid-column: 2; }
+.copy .len { font-family: var(--font-data); font-size: 12px; color: var(--muted); margin-left: 6px; }
+.copy .len[data-over] { color: var(--warn); }
+.copy.long { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); }
+.copy.long .ja { grid-column: auto; }
+@media (max-width: 640px) { .copy.long { grid-template-columns: auto minmax(0, 1fr); } .copy.long .ja { grid-column: 2; } }
+.copy-btn { position: absolute; top: 8px; right: 8px; font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.copy-btn:hover { border-color: var(--pick); }
+.copy-btn[data-done] { color: var(--pick); border-color: var(--pick); }
+
+dialog { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 92vh; }
+dialog::backdrop { background: rgb(10 14 16 / .82); }
+dialog img { display: block; max-width: 96vw; max-height: 88vh; border-radius: 6px; }
+dialog .cap { color: #e6ecef; font-size: 13px; text-align: center; margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1 id="title"></h1>
+    <p class="lead" id="lead"></p>
+    <div class="status" id="status" aria-live="polite">保存先に接続しています…</div>
+  </header>
+
+  <section aria-labelledby="tray-h">
+    <div class="sec-head"><h2 id="tray-h">採用セット</h2><button class="ghost" id="pick-rec" type="button">おすすめで埋める</button></div>
+    <div class="tray">
+      <div id="tray-rows" class="stack"></div>
+      <div class="opts" id="choices"></div>
+      <div class="fb"><label for="note-global">全体への指示</label><textarea id="note-global" placeholder="例: 全体にもう少し明るい画面がほしい"></textarea></div>
+    </div>
+  </section>
+
+  <div id="groups" class="stack wide"></div>
+</div>
+
+<dialog id="zoom" aria-label="拡大表示"><img id="zoom-img" alt=""><div class="cap" id="zoom-cap"></div></dialog>
+
+<script>
+const SPEC = /*SPEC*/{};
+const DOC = SPEC.doc || "picks/current";
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+// picks: pick key -> {mode: "multi"|"single", max, label, kind: "image"|"text", items: Map id -> item}
+const picks = {};
+for (const g of SPEC.groups) {
+  const p = picks[g.pick] || (picks[g.pick] = { mode: g.mode || "single", max: g.max || 1, label: g.trayLabel || g.title, kind: g.type, items: new Map() });
+  for (const it of g.items) p.items.set(it.id, it);
+}
+const NOTES = { "note-global": "note" };
+for (const g of SPEC.groups) if (g.noteKey) NOTES["note-" + g.id] = g.noteKey;
+const CHOICES = SPEC.choices || [];
+
+const state = {};
+for (const [k, p] of Object.entries(picks)) state[k] = p.mode === "multi" ? [] : null;
+for (const c of CHOICES) state[c.key] = null;
+for (const k of Object.values(NOTES)) state[k] = "";
+
+let db = null, saveTimer = 0, pending = false;
+function setStatus(text, kind) { const s = $("status"); s.textContent = text; s.dataset.kind = kind || ""; }
+
+$("eyebrow").textContent = SPEC.eyebrow || "";
+$("title").textContent = SPEC.heading || SPEC.title || "";
+$("lead").textContent = SPEC.lead || "";
+
+function openZoom(it) { $("zoom-img").src = it.src; $("zoom-img").alt = it.label; $("zoom-cap").textContent = it.no + "  " + it.label + (it.file ? "  (" + it.file + ")" : ""); $("zoom").showModal(); }
+$("zoom").addEventListener("click", () => $("zoom").close());
+
+function toggle(key, id) {
+  const p = picks[key];
+  if (p.mode === "multi") {
+    const a = state[key], i = a.indexOf(id);
+    if (i >= 0) a.splice(i, 1);
+    else if (a.length < p.max) a.push(id);
+    else { setStatus(p.label + " は " + p.max + " 個までです。どれかを外してから選んでください", "warn"); return; }
+  } else state[key] = state[key] === id ? null : id;
+  changed();
+}
+function move(key, id, d) { const a = state[key], i = a.indexOf(id), j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; changed(); }
+
+// Copies the submission text; selecting it is the fallback where the clipboard is refused.
+function copyButton(text, target) {
+  const b = el("button", "copy-btn", "コピー"); b.type = "button"; b.setAttribute("aria-label", "本文をコピー");
+  b.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const done = (label) => { b.textContent = label; b.dataset.done = ""; setTimeout(() => { b.textContent = "コピー"; delete b.dataset.done; }, 1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(target); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done("選択しました"); };
+    try { navigator.clipboard.writeText(text).then(() => done("コピーしました"), fallback); } catch { fallback(); }
+  });
+  return b;
+}
+
+function imageCard(g, it) {
+  const c = el("div", "card"); c.tabIndex = 0; c.dataset.id = it.id; c.dataset.pick = g.pick;
+  c.setAttribute("role", picks[g.pick].mode === "multi" ? "checkbox" : "radio");
+  const img = el("img"); img.src = it.src; img.alt = it.label; img.loading = "lazy";
+  const meta = el("div", "meta"), name = el("span", "name");
+  name.append(el("span", "no", it.no), it.label); meta.append(name);
+  if (it.rec) meta.append(el("span", "rec", "おすすめ"));
+  const z = el("button", "zoom", "⤢"); z.type = "button"; z.setAttribute("aria-label", it.no + " を拡大");
+  z.addEventListener("click", (e) => { e.stopPropagation(); openZoom(it); });
+  const badge = el("span", "badge"); badge.hidden = true;
+  c.append(img, meta, z, badge);
+  const t = () => toggle(g.pick, it.id);
+  c.addEventListener("click", t);
+  c.addEventListener("keydown", (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); t(); } });
+  return c;
+}
+
+function textOption(g, it) {
+  const l = el("label", "copy" + (g.long ? " long" : ""));
+  const i = el("input"); i.type = "radio"; i.name = "text-" + g.pick; i.value = it.id; i.dataset.pick = g.pick;
+  i.addEventListener("change", () => { state[g.pick] = it.id; changed(); });
+  const en = el("span", "en", it.no + ". " + it.text);
+  const len = el("span", "len", (g.long ? "\n" : "") + it.text.length + " 字" + (g.limit ? " / " + g.limit : ""));
+  if (g.limit && it.text.length > g.limit) len.dataset.over = "";
+  en.append(len);
+  l.append(i, en);
+  if (it.translation) l.append(el("span", "ja", it.translation));
+  l.append(copyButton(it.text, en));
+  return l;
+}
+
+for (const g of SPEC.groups) {
+  const s = el("section"); s.setAttribute("aria-labelledby", "h-" + g.id);
+  const head = el("div", "sec-head"), h = el("h2", null, g.title); h.id = "h-" + g.id;
+  head.append(h); if (g.sub) head.append(el("p", null, g.sub)); s.append(head);
+  if (g.type === "image") {
+    const grid = el("div", "grid"); grid.id = "grid-" + g.id;
+    grid.style.setProperty("--min-col", (g.minCol || 180) + "px");
+    if (g.aspect) grid.style.setProperty("--aspect", g.aspect);
+    grid.setAttribute("role", picks[g.pick].mode === "multi" ? "group" : "radiogroup"); grid.setAttribute("aria-label", g.title);
+    g.items.forEach((it) => grid.append(imageCard(g, it)));
+    s.append(grid);
+  } else {
+    const list = el("div", "copy-list"); list.setAttribute("role", "radiogroup"); list.setAttribute("aria-label", g.title);
+    g.items.forEach((it) => list.append(textOption(g, it)));
+    s.append(list);
+  }
+  if (g.noteKey) {
+    const fb = el("div", "fb"), lab = el("label", null, g.noteLabel || ((g.trayLabel || g.title) + "へのコメント（Claude への指示）"));
+    lab.htmlFor = "note-" + g.id; const ta = el("textarea"); ta.id = "note-" + g.id; ta.placeholder = g.notePlaceholder || "";
+    fb.append(lab, ta); s.append(fb);
+  }
+  $("groups").append(s);
+}
+
+for (const c of CHOICES) {
+  const fs = el("fieldset"); fs.append(el("legend", null, c.legend));
+  c.options.forEach((o) => {
+    const l = el("label", "radio"), i = el("input"); i.type = "radio"; i.name = "choice-" + c.key; i.id = "choice-" + c.key + "-" + o.value; i.value = o.value;
+    i.addEventListener("change", () => { state[c.key] = o.value; changed(); });
+    l.append(i, " " + o.label); fs.append(l);
+  });
+  $("choices").append(fs);
+}
+if (!CHOICES.length) $("choices").hidden = true;
+
+function render() {
+  document.querySelectorAll(".card").forEach((c) => {
+    const key = c.dataset.pick, v = state[key], b = c.querySelector(".badge");
+    const i = Array.isArray(v) ? v.indexOf(c.dataset.id) : (v === c.dataset.id ? 0 : -1);
+    c.setAttribute("aria-checked", String(i >= 0)); b.hidden = i < 0; b.textContent = Array.isArray(v) ? i + 1 : "✓";
+  });
+  document.querySelectorAll(".copy input").forEach((i) => { i.checked = state[i.dataset.pick] === i.value; });
+  for (const c of CHOICES) c.options.forEach((o) => { $("choice-" + c.key + "-" + o.value).checked = state[c.key] === o.value; });
+  Object.entries(NOTES).forEach(([id, key]) => { if (document.activeElement !== $(id)) $(id).value = state[key] || ""; });
+
+  const rows = $("tray-rows"); rows.replaceChildren();
+  for (const [key, p] of Object.entries(picks)) {
+    const row = el("div", "tray-row"), lab = el("div", "tray-label", p.label + " ");
+    const sel = p.mode === "multi" ? state[key] : (state[key] ? [state[key]] : []);
+    if (p.mode === "multi") lab.append(el("span", "count", sel.length + " / " + p.max));
+    row.append(lab);
+    const box = el("div", p.kind === "image" ? "tray-items" : "");
+    if (!sel.length) box.append(el("span", "empty", "まだ選ばれていません"));
+    sel.forEach((id, i) => {
+      const it = p.items.get(id); if (!it) return;
+      if (p.kind !== "image") { box.append(el("div", "tray-text", it.text)); return; }
+      const w = el("div", "tray-item"), img = el("img"); img.src = it.src; img.alt = it.label; w.append(img);
+      if (p.mode === "multi") {
+        const ctl = el("div", "ctl");
+        const l = el("button", null, "←"); l.type = "button"; l.disabled = i === 0; l.setAttribute("aria-label", (i + 1) + " 番目を前へ"); l.onclick = () => move(key, id, -1);
+        const r = el("button", null, "→"); r.type = "button"; r.disabled = i === sel.length - 1; r.setAttribute("aria-label", (i + 1) + " 番目を後ろへ"); r.onclick = () => move(key, id, 1);
+        ctl.append(l, el("span", null, (i + 1) + " · " + it.no), r); w.append(ctl);
+      }
+      box.append(w);
+    });
+    row.append(box); rows.append(row);
+  }
+}
+
+function snapshot() { const o = {}; for (const k of Object.keys(state)) o[k] = Array.isArray(state[k]) ? state[k].slice() : state[k]; o.updatedAt = new Date().toISOString(); return o; }
+
+function changed() {
+  render();
+  if (!db) { setStatus("この表示では保存されません（選択は画面上だけに残ります）", "warn"); return; }
+  pending = true; setStatus("保存中…");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await db.doc(DOC).set(snapshot());
+      pending = false; setStatus("保存しました " + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }), "ok");
+    } catch (e) { pending = false; setStatus("保存できませんでした（" + (e && e.code || "error") + "）。編集できる権限で開いているか確認してください", "warn"); }
+  }, 500);
+}
+
+Object.entries(NOTES).forEach(([id, key]) => $(id).addEventListener("input", () => { state[key] = $(id).value; changed(); }));
+$("pick-rec").addEventListener("click", () => {
+  for (const [key, p] of Object.entries(picks)) {
+    const recs = [...p.items.values()].filter((it) => it.rec).map((it) => it.id);
+    state[key] = p.mode === "multi" ? recs.slice(0, p.max) : (recs[0] || null);
+  }
+  changed();
+});
+
+render();
+
+(async () => {
+  db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+  if (!db) { setStatus("この表示では保存されません（選択は画面上だけに残ります）", "warn"); return; }
+  setStatus("保存先に接続しました。選ぶと自動で保存されます", "ok");
+  db.doc(DOC).onSnapshot((snap) => {
+    if (pending || !snap.exists) return;
+    const d = snap.data() || {};
+    for (const [key, p] of Object.entries(picks)) {
+      if (p.mode === "multi") state[key] = Array.isArray(d[key]) ? d[key].filter((id) => p.items.has(id)).slice(0, p.max) : [];
+      else state[key] = p.items.has(d[key]) ? d[key] : null;
+    }
+    for (const c of CHOICES) state[c.key] = c.options.some((o) => o.value === d[c.key]) ? d[c.key] : null;
+    for (const k of Object.values(NOTES)) state[k] = typeof d[k] === "string" ? d[k] : "";
+    render();
+  }, () => setStatus("保存済みの選択を読み込めませんでした", "warn"));
+})();
+</script>

@@ -1,0 +1,45 @@
+---
+name: retrospective-codify
+description: Meta-skill that looks back over the current session's trial-and-error and extracts a reusable skill from it. Invoke ONLY when the user explicitly asks, e.g. "このセッションをスキル化して", "今やった手順を skill にして", "codify what we did", "retrospective". Do NOT auto-invoke just because a task finished.
+---
+
+# retrospective-codify — Turn a session into a skill
+
+Distill the generalizable, reusable procedure out of what just happened in this session, and codify it as a new skill following the repository conventions.
+
+This is the meta-skill the gist calls central: *automate the learning by codifying it.* It builds on [skill-creator](../skill-creator/SKILL.md) — read that for the SKILL.md conventions and the three-condition check; this skill is about *extracting* the content from a session rather than gathering it by interview.
+
+## When to use
+
+Explicit invocation only. The user just finished some work (debugging, a setup, a workflow) and wants the knowledge captured so they don't re-derive it next time. Do not fire automatically.
+
+## What to extract from the session
+
+Look back over the conversation and pull out:
+
+1. **The task that was actually solved** — stated as a recurring situation, not a one-off ("set up X", "debug Y class of failure").
+2. **The working procedure** — the steps/commands/decisions that led to success, in order.
+3. **The failures and gotchas** — what was tried first and *why it didn't work*. This is the highest-value part: per the gist, the value is in sharing failures. Keep the "why", not just the fix.
+4. **Deterministic steps worth scripting** — if a step was a fixed command or transform, note it as a candidate for a `scripts/` file rather than prose.
+
+## Procedure
+
+1. **Summarize the candidate** to the user in a few lines: the recurring task, the procedure, the gotchas. Confirm this is worth codifying.
+2. **Determine the target** (from skill-creator): does this become part of the `agent-skills` repo (shared/distributed), or a project-local skill living only in the project this session was about? This decides which of the checks below apply.
+3. **Apply the three-condition filter** (from skill-creator): does it solve a problem, is it reproducible, is it novel? If it's a one-off or trivially obvious, say so and stop — a memory may be enough instead.
+4. **Draft the skill**:
+   - `name` (kebab-case), `description` with the trigger words the user would actually say next time.
+   - Body = the working procedure + a **"Gotchas / what didn't work"** section preserving the failures and their reasons.
+   - If a step was deterministic, write it as a `scripts/` file and reference it from the body (progressive disclosure).
+   - **Genericize before writing — only if targeting `agent-skills`.** A session's trial-and-error happened on one real project — that's exactly what makes it worth codifying, but also means the raw material is soaked in that project's specific names, paths, and object model. Run [skill-creator](../skill-creator/SKILL.md)'s genericity check as you draft, not after: state the working procedure and gotchas in project-neutral terms, then keep the concrete session detail as a clearly labeled "Worked example" rather than letting it read as the general rule. Skip this for a project-local skill — staying tied to that project's real names/paths is correct there, not a defect.
+   - **Public-safety check — always, regardless of target.** A session transcript is exactly where a pasted API key, a real internal URL, or a personal absolute path is most likely to be sitting in plain sight (from a debugging step, an error message, a `curl` command). Before it lands in the skill file, scrub anything from skill-creator's public-safety check — this applies even to a project-local skill, since "it's just this project" doesn't mean the project's own repo is private forever.
+5. **Write**:
+   - For `agent-skills`: `<repo>/<category>/<name>/SKILL.md` (and any `scripts/`), plus the Japanese `README.ja.md` for people, following skill-creator's conventions.
+   - For a project-local skill: `<project>/.claude/skills/<name>/SKILL.md` directly.
+6. **Install & verify**: for `agent-skills`, add it to its plugin's `skills` list in `.claude-plugin/marketplace.json` and to the skill tables in `README.md` / `README.ja.md`, and run `claude plugin validate .` (`./install.sh` only for Codex or machines without the plugin); check `name` matches the directory and the trigger words are concrete. A project-local skill needs no install step.
+7. **Inform**: new skills load at session start (`/clear` or a new session).
+
+## Notes
+
+- Prefer one focused skill over a grab-bag. If the session covered two unrelated things, extract two skills (or ask which one).
+- Don't invent steps that didn't happen. Codify what the session actually established; mark anything uncertain as "unverified" rather than asserting it.
