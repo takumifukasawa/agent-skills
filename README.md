@@ -13,6 +13,7 @@ A collection of Claude Code skills (Agent Skills), distributed as a plugin marke
 /plugin install meta@takumifukasawa-agent-skills
 /plugin install gamedev@takumifukasawa-agent-skills
 /plugin install blog@takumifukasawa-agent-skills
+/plugin install security@takumifukasawa-agent-skills
 ```
 
 Install only the categories you want, then run `/reload-plugins` (or start a new session). Plugin skills are namespaced (`/gamedev:mobile-audio-render`) and still trigger from their `description`.
@@ -95,6 +96,12 @@ Each skill folder has a `SKILL.md` (what Claude reads) and a `README.ja.md` (a J
 | [mobile-audio-render](./gamedev/mobile-audio-render/SKILL.md) | Find and fix Web Audio crackle/pops on real phones (Android Chrome) and heavy three.js rendering, with on-device audio tracing over USB |
 | [verify-in-unity](./gamedev/verify-in-unity/SKILL.md) | Self-verify a change inside the Unity Editor via Unity MCP: compile check, play mode, driving the UI, logs/asserts/screenshots, restore |
 
+### security
+
+| Skill | Description |
+|---|---|
+| [leak-audit](./security/leak-audit/SKILL.md) | Audit the working tree and full git history for secrets and private names before publishing, and plan the cleanup (history rewrite, rotating secrets, re-cloning copies) |
+
 ## Repository layout
 
 Skills are organized into category folders, each skill being `<category>/<skill-name>/`. Each category is one plugin in `.claude-plugin/marketplace.json`.
@@ -107,7 +114,8 @@ agent-skills/
 │       ├── SKILL.md                  # what Claude reads (drives behavior)
 │       └── README.ja.md              # Japanese explanation for people
 ├── blog/
-└── gamedev/
+├── gamedev/
+└── security/
 ```
 
 Categories are for organizing this repo only. `install.sh` links skills **flat** into `~/.claude/skills/` by their directory name, so the frontmatter `name` matches the skill's own folder name — no category prefix.

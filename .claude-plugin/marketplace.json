@@ -26,6 +26,12 @@
       "source": "./gamedev",
       "description": "Game dev skills: app icon, store assets, gameplay and ad video, version history, audio crackle and render cost on phones, self-verification in the Unity Editor",
       "skills": ["./game-icon-from-screenshot", "./game-store-assets", "./game-gameplay-video", "./version-history-update", "./mobile-audio-render", "./verify-in-unity"]
+    },
+    {
+      "name": "security",
+      "source": "./security",
+      "description": "Security skills: audit a repo and its git history for secrets and private information before publishing, and clean up leaks",
+      "skills": ["./leak-audit"]
     }
   ]
 }

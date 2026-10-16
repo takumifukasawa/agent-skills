@@ -17,6 +17,7 @@ Claude Code のプロンプトで次を実行します。
 /plugin install meta@takumifukasawa-agent-skills
 /plugin install gamedev@takumifukasawa-agent-skills
 /plugin install blog@takumifukasawa-agent-skills
+/plugin install security@takumifukasawa-agent-skills
 ```
 
 - 使いたいカテゴリだけ入れれば足ります。入れたら `/reload-plugins` を実行する（または新しいセッションを開く）と使えるようになります。
@@ -103,6 +104,12 @@ npx degit takumifukasawa/agent-skills/meta/skill-creator ~/.claude/skills/skill-
 | [mobile-audio-render](./gamedev/mobile-audio-render/README.ja.md) | 実機（特に Android Chrome）での音のぶつぶつと、three.js の描画の重さを切り分けて直す |
 | [verify-in-unity](./gamedev/verify-in-unity/README.ja.md) | Unity MCP で、実装した変更を AI 自身が Unity Editor 内で検証する |
 
+### security
+
+| スキル | 内容 |
+|---|---|
+| [leak-audit](./security/leak-audit/README.ja.md) | 公開前に、作業ツリーと git の全履歴からシークレットや社名などの非公開情報を探し、見つかったら掃除の段取り（履歴の書き換え、鍵のローテーション、コピーの回収）をする |
+
 ## リポジトリの構成
 
 スキルはカテゴリのフォルダに分けて `<カテゴリ>/<スキル名>/` に置いています。カテゴリ 1 つが `.claude-plugin/marketplace.json` のプラグイン 1 つに当たります。
@@ -115,7 +122,8 @@ agent-skills/
 │       ├── SKILL.md                  # Claude が読むもの（動作を決める）
 │       └── README.ja.md              # 人間向けの日本語の説明
 ├── blog/
-└── gamedev/
+├── gamedev/
+└── security/
 ```
 
 カテゴリはこのリポジトリの整理用です。`install.sh` はスキルをフォルダ名のまま `~/.claude/skills/` にフラットにリンクするので、frontmatter の `name` はスキル自身のフォルダ名と同じにします（カテゴリの接頭辞は付けません）。
