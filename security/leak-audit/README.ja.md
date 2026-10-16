@@ -21,7 +21,7 @@
    - そのうえで、どこまで広がったかで直し方を選びます。未 push ならコミットを作り直すだけです。push 済みで PR がなければ `git filter-repo` と force push。PR に含まれていれば、GitHub の `refs/pull/*` は持ち主にも消せないので、リポジトリを削除して作り直します
    - ほかの PC の clone、fork、CI のキャッシュ、Claude Code のプラグインマーケットプレイスの clone やキャッシュなど、コピーを全部回収します
    - 新しく clone したもので再スキャンし、古いコミットがもう読み出せないことを確かめます
-   - 再発防止を提案します。pre-commit フック、GitHub のメール非公開設定、エージェントのセッションリンク（`Claude-Session:`）の付与をやめること、同期スクリプトの修正です
+   - 再発防止を提案します。public リポジトリには、毎回自動で走る軽い検査をフックとして入れます（`assets/leak-audit-hook.sh` を `.githooks/` に置き、pre-push・commit-msg・pre-commit から呼びます）。中心は pre-push です。cherry-pick と rebase では pre-commit も commit-msg も走らないので、前回のような漏れは push の時点でしか止められません。agent-harness があるリポジトリでは、pre-commit の分を `.harness/checks.sh` に1行で足します。leak-audit や gitleaks が見つからない PC では「検査していない」と警告して通します（`LEAK_AUDIT_STRICT=1` なら止めます）。誤検知は `.leak-audit-allow` に書いて許可できますが、非公開語は許可できません。ほかに、GitHub のメール非公開設定、エージェントのセッションリンク（`Claude-Session:`）の付与をやめること、同期スクリプトの修正も提案します
 
 ## 注意点
 - スクリプトはすべて Python なので、Windows でもそのまま動きます。`uv` がなければ、インストールを提案します（どの OS でも単体のバイナリです）。
@@ -33,6 +33,8 @@
 
 ## 同梱ファイル
 - `scripts/scan.py` — スキャナー（Python と git だけで動きます。macOS / Linux / Windows 共通）
+- `scripts/hook.py` — git フックの入口（pre-push / commit-msg / pre-commit）。`scan.py` と gitleaks を束ねる
+- `assets/leak-audit-hook.sh` — リポジトリに置く呼び出し口。PC ごとに違うスキルの置き場所と Python を探す
 - `scripts/external.py` — gitleaks・trufflehog・exiftool のうち入っているものを実行して、結果をまとめる
 - `scripts/find_candidates.py` — 固有名詞・ID・数値・予定の候補を洗い出す（`uv run --with janome --with wordfreq python ...` で実行。どちらも Python だけで動くパッケージで、uv が使い捨ての環境に入れます）
 - `references/remediation.md` — 見つかったあとの対処手順（filter-repo のレシピ、作り直しの手順、コピーの回収、実例）

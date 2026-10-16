@@ -160,8 +160,11 @@ Read `references/remediation.md` for the full playbook. The decisions, in order:
    `<config dir>/plugins/marketplaces/` and `<config dir>/plugins/cache/`. Check each and refetch or delete.
 4. **Verify**: re-run `scan.py --history` on a fresh clone of the remote, and confirm the old commit id no longer
    resolves (`git cat-file -t <old-sha>` fails) in every local copy you cleaned.
-5. **Prevent recurrence**: offer a pre-commit hook that runs `scan.py --staged` with the terms file (see the
-   reference for a 3-line hook), and a gitignored terms file on each machine that commits.
+5. **Prevent recurrence**: for a public repo, offer the hooks in `references/remediation.md` ("Hooks"):
+   `${CLAUDE_SKILL_DIR}/assets/leak-audit-hook.sh` copied into `.githooks/` and called from `pre-push`
+   (the gate that matters: cherry-pick and rebase skip commit-time hooks), `commit-msg` and `pre-commit`; with
+   agent-harness the pre-commit part goes into `.harness/checks.sh` instead. Plus a gitignored terms file on each
+   machine that commits. Test once after installing: commit a line with a private term and see it stopped.
 
 Actions that touch a remote (force push, deleting/recreating a repo) or delete local data are outward-facing and
 hard to reverse: confirm with the user before each, even mid-flow.

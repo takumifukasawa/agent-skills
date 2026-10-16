@@ -109,18 +109,44 @@ Clean on a fresh clone is the evidence that the remote is clean. Then check each
 
 ## 4. Prevent recurrence
 
-A pre-commit hook in the repo (enable with `git config core.hooksPath .githooks`):
+### Hooks: a fast check on every push and commit
+
+An audit only runs when someone asks for it. For a repo that is (or will be) public, install hooks so the fast
+check runs every time. Only public repos need this: in a private work repo the company's names are not leaks.
+
+**Why pre-push is the one that matters**: `git cherry-pick` (with or without `-x`) and `git rebase` run neither
+pre-commit nor commit-msg, and a merge runs only commit-msg. Commits carried over by a sync script, and every
+commit message and branch name, reach the remote without passing a commit-time hook. pre-push sees everything that
+leaves: the new commits' content, messages and file names, and the ref name being pushed.
+
+Install (from the repo root; the shim holds no machine paths, so commit it and it works on every machine):
 
 ```bash
-#!/usr/bin/env bash
-# .githooks/pre-commit
-exec python <path to>/scan.py --staged --terms "$(git rev-parse --show-toplevel)/.public-check.local"
+mkdir -p .githooks
+cp <leak-audit dir>/assets/leak-audit-hook.sh .githooks/leak-audit.sh
+printf '#!/bin/sh\nexec sh "$(git rev-parse --show-toplevel)/.githooks/leak-audit.sh" pre-push "$@"\n' > .githooks/pre-push
+printf '#!/bin/sh\nexec sh "$(git rev-parse --show-toplevel)/.githooks/leak-audit.sh" commit-msg "$1"\n' > .githooks/commit-msg
+printf '#!/bin/sh\nexec sh "$(git rev-parse --show-toplevel)/.githooks/leak-audit.sh" pre-commit\n' > .githooks/pre-commit
+chmod +x .githooks/*
+git config core.hooksPath .githooks     # once per clone; git ignores hooks without the executable bit
 ```
 
-Git for Windows runs hooks with its bundled sh, so the same hook works there (use `py` or `python3` if that is the
-interpreter name). Add `.public-check.local` (and `.public-check.known`) to `.gitignore`, and create the terms file
-on every machine that commits. Commit messages are
-published too; a `commit-msg` hook can grep the message file against the same terms.
+- If the repo already has a `.githooks/pre-commit` (or another hook runner), call the shim from it instead of
+  replacing it. With agent-harness, `.githooks/pre-commit` is managed by the harness: leave it, and add the
+  pre-commit part as a fast check in `.harness/checks.sh`:
+  `check fast "leak-audit: staged" "sh .githooks/leak-audit.sh pre-commit"`.
+  The harness runs only pre-commit, so `pre-push` and `commit-msg` still go in `.githooks/` as above.
+- The shim finds leak-audit on each machine (`$LEAK_AUDIT_DIR`, then `skills/leak-audit` under
+  `$CLAUDE_CONFIG_DIR` and every `~/.claude*`, then the newest copy in their plugin caches) and Python 3.8+
+  (`python3`, `python`, `py -3`). Git for Windows runs hooks with its bundled sh, so the same files work there.
+- Missing leak-audit, Python or gitleaks: a warning that the check did NOT run, and the commit / push goes
+  through. `LEAK_AUDIT_STRICT=1` makes any of those a failure.
+- Private terms come from `.public-check.local` in the repo root, gitignored, created on every machine that
+  commits. Without it the hooks still run the generic rules and say that names were not checked.
+- False positives: a regex for the line in `.leak-audit-allow` (committed, so public text only). Private terms
+  cannot be allowed that way.
+- Speed: well under a second for a typical commit or push (scan.py over the new lines + gitleaks if installed).
+  Full history and candidate extraction stay out of hooks; run the audit for those.
 
 Other sources to close:
 

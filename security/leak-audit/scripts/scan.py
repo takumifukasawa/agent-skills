@@ -9,13 +9,23 @@ Pure Python 3.8+ and git; runs the same on macOS, Linux and Windows. Run it insi
 MODE (pick one; run several for a full audit):
   --tree          every file in the working tree (tracked + untracked, minus gitignored)
   --staged        lines added in the staged diff (what the next commit adds)
-  --range A..B    lines added, commit messages, file names and ref names for commits A..B (@{u}..HEAD = unpushed)
-  --history       the same over every commit reachable from any ref (branches, tags, stash, remotes).
-                  Run `git fetch --all --prune --tags` first: the remote may have commits your clone has not seen.
+  --range REVS    lines added, commit messages and file names for the commits REVS selects: "A..B"
+                  (@{u}..HEAD = unpushed), or several revision args in one string ("SHA --not --remotes=origin").
+                  Ref names are checked only when given with --ref (a pre-push hook passes the refs it pushes).
+  --history       the same over every commit reachable from any ref (branches, tags, stash, remotes), plus all
+                  ref names. Run `git fetch --all --prune --tags` first: the remote may have commits your clone
+                  has not seen.
+  --msg FILE      a commit message file (the commit-msg hook passes it). Comment lines and everything below the
+                  scissors line are ignored, as git does.
 
 --terms FILE  extra regexes, one per line, case-insensitive, '#' comments. Defaults to .public-check.local in the
               repo root when it exists. Keep it out of git (gitignore it): the list itself is the private information.
 --max N       print at most N hits per rule (default 30)
+--ref NAME    a ref name to check as well (repeatable)
+--allow FILE  regexes of lines to accept despite a generic rule (false positives), one per line. Defaults to
+              .leak-audit-allow in the repo root. It is committed with the repo, so it may only hold public text.
+              Private terms are never allowed by it: if a private term must stay, remove it from the terms file.
+--quiet       no INFO sections (for hooks)
 
 Output: one block per rule with "location: text" lines. Location is file:line for --tree / --staged and
 <commit>:file for history modes (COMMIT_MSG for messages, REF for ref names). Exit 1 if anything was found,
@@ -105,9 +115,17 @@ def text_file_lines(path):
     return data.decode("utf-8", "replace").splitlines()
 
 
-def collect(mode, rng):
+def collect(mode, rng, msg=None, refs=()):
     """Return (lines as (location, file, text), file names, revs or None)."""
     lines, files = [], []
+    if mode == "msg":
+        with open(msg, encoding="utf-8", errors="replace") as f:
+            for i, t in enumerate(f.read().splitlines(), 1):
+                if t.startswith("# ------------------------ >8"):
+                    break
+                if t.strip() and not t.startswith("#"):
+                    lines.append((f"COMMIT_MSG:{i}", "", t))
+        return lines, files, None
     if mode == "tree":
         files = git("ls-files", "--cached", "--others", "--exclude-standard").splitlines()
         for p in files:
@@ -127,7 +145,7 @@ def collect(mode, rng):
                 n += 1
         files = git("diff", "--cached", "--name-only", "--diff-filter=ACMR").splitlines()
         return lines, files, None
-    revs = [rng] if mode == "range" else ["--all"]
+    revs = rng.split() if mode == "range" else ["--all"]
     commit, path = "", ""
     for l in git("log", *revs, "-p", "-U0", "--no-color", "--no-ext-diff", "--format=commit %H").splitlines():
         if l.startswith("commit ") and len(l) == 47:
@@ -142,7 +160,7 @@ def collect(mode, rng):
             if t.strip():
                 lines.append((f"{sha}:COMMIT_MSG", "", t))
     # Ref names are published too (branch / tag names often carry a repo or project name).
-    for ref in git("for-each-ref", "--format=%(refname)").splitlines():
+    for ref in (git("for-each-ref", "--format=%(refname)").splitlines() if mode == "history" else refs):
         lines.append(("REF", "", ref))
     files = sorted(set(git("log", *revs, "--name-only", "--format=", "--diff-filter=A").split("\n")) - {""})
     return lines, files, revs
@@ -154,11 +172,19 @@ def main():
     g.add_argument("--tree", action="store_const", const="tree", dest="mode")
     g.add_argument("--staged", action="store_const", const="staged", dest="mode")
     g.add_argument("--history", action="store_const", const="history", dest="mode")
-    g.add_argument("--range", metavar="A..B")
+    g.add_argument("--range", metavar="REVS")
+    g.add_argument("--msg", metavar="FILE")
     ap.add_argument("--terms")
     ap.add_argument("--max", type=int, default=30)
+    ap.add_argument("--ref", action="append", default=[])
+    ap.add_argument("--allow")
+    ap.add_argument("--quiet", action="store_true")
     a = ap.parse_args()
-    mode = "range" if a.range else a.mode
+    mode = "range" if a.range else "msg" if a.msg else a.mode
+    if a.msg:
+        a.msg = os.path.abspath(a.msg)
+    if a.allow:
+        a.allow = os.path.abspath(a.allow)
 
     if a.terms:
         a.terms = os.path.abspath(a.terms)
@@ -179,7 +205,13 @@ def main():
                 if t and not t.startswith("#"):
                     rules.append(("private term", re.compile(t, re.I), True))
 
-    lines, files, revs = collect(mode, a.range)
+    allow_path = a.allow or (".leak-audit-allow" if os.path.exists(".leak-audit-allow") else None)
+    allow = []
+    if allow_path:
+        with open(allow_path, encoding="utf-8") as f:
+            allow = [re.compile(t.strip(), re.I) for t in f if t.strip() and not t.startswith("#")]
+
+    lines, files, revs = collect(mode, a.range, a.msg, a.ref)
     skip = SKIP_FILES | ({os.path.basename(terms)} if terms else set())
     lines = [x for x in lines if os.path.basename(x[1]) not in skip]
 
@@ -190,19 +222,20 @@ def main():
         if not found:
             return
         hits = True
-        print(f"\n[{name}] {len(found)} hit(s)  /{pattern}/")
+        print(f"\n[{name}] {len(found)} hit(s)" + ("" if a.quiet else f"  /{pattern}/"))
         for s in found[: a.max]:
             print("  " + s[:220])
         if len(found) > a.max:
             print(f"  ... {len(found) - a.max} more (raise --max)")
 
     for name, rx, private in rules:
-        found = [f"{loc}:{t}" for loc, _, t in lines if rx.search(t) and (private or not ALLOW.search(t))]
+        found = [f"{loc}:{t}" for loc, _, t in lines if rx.search(t)
+                 and (private or not (ALLOW.search(t) or any(x.search(t) for x in allow)))]
         report(name, rx.pattern, found)
     report("sensitive file name", FILE_RE.pattern,
            [p for p in files if FILE_RE.search(p) and not FILE_ALLOW.search(p)])
 
-    if mode == "tree":
+    if mode == "tree" and not a.quiet:
         meta = [(p, media_metadata(p)) for p in files if os.path.splitext(p)[1].lower() in MEDIA_EXT]
         meta = [(p, m) for p, m in meta if m]
         if meta:
@@ -210,7 +243,7 @@ def main():
             for p, m in meta[: a.max]:
                 print(f"  {p}: " + " | ".join(m)[:200])
 
-    if revs:
+    if revs and not a.quiet:
         tz = {}
         for l in git("log", *revs, "--format=%ai").splitlines():
             tz[l[-5:]] = tz.get(l[-5:], 0) + 1
@@ -231,7 +264,8 @@ def main():
     if not terms:
         print("\n[note] no private-terms file: only generic patterns ran. "
               "Company / product / people names need --terms FILE (find_candidates.py helps build it).", file=sys.stderr)
-    print(f"\n[leak-audit] {'hits found' if hits else 'clean'} ({mode})")
+    if not (a.quiet and not hits):
+        print(f"\n[leak-audit] {'hits found' if hits else 'clean'} ({mode})")
     return 1 if hits else 0
 
 
