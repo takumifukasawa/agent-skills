@@ -16,3 +16,6 @@ node_modules/
 
 # private terms for scripts/check-public.sh (company / product / game / host / people names). Never commit it
 .public-check.local
+.public-check.known
+__pycache__/
+*.pyc

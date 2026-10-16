@@ -7,7 +7,7 @@
  * bloom/postFX pipeline can STALL the headless render+physics loop, so the
  * subject just freezes at its spawn (velocity is set but position never
  * integrates). Here we drive the subject BY HAND along a path over frames, so
- * a moving-ball trail builds up regardless of physics.
+ * a motion trail (e.g. a particle trail behind the player) builds up regardless of physics.
  *
  * Usage: node pose-capture.cjs <config.(cjs|json)> [outDir]
  *

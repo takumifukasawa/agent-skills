@@ -166,3 +166,7 @@ description: いつ使うスキルか（発火する言葉を具体的に）
 
 - [anthropics/skills](https://github.com/anthropics/skills) — 公式のスキル集と仕様（`spec/`）、テンプレート（`template/`）。このリポジトリの規約はこれに従っています。
 - [mizchi/skills](https://github.com/mizchi/skills) — APM で配られているコミュニティのスキル集。
+
+## ライセンス
+
+[MIT](./LICENSE)

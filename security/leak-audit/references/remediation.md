@@ -101,7 +101,7 @@ The remote is fixed; copies are not. Go through each:
 
 ```bash
 git clone <url> /tmp/verify && cd /tmp/verify
-<skill dir>/scripts/scan.sh --history --terms <terms file>
+python <skill dir>/scripts/scan.py --history --terms <terms file>
 ```
 
 Clean on a fresh clone is the evidence that the remote is clean. Then check each local copy you cleaned with
@@ -114,10 +114,12 @@ A pre-commit hook in the repo (enable with `git config core.hooksPath .githooks`
 ```bash
 #!/usr/bin/env bash
 # .githooks/pre-commit
-exec <path to>/scan.sh --staged --terms "$(git rev-parse --show-toplevel)/.public-check.local"
+exec python <path to>/scan.py --staged --terms "$(git rev-parse --show-toplevel)/.public-check.local"
 ```
 
-Add `.public-check.local` to `.gitignore`, and create it on every machine that commits. Commit messages are
+Git for Windows runs hooks with its bundled sh, so the same hook works there (use `py` or `python3` if that is the
+interpreter name). Add `.public-check.local` (and `.public-check.known`) to `.gitignore`, and create the terms file
+on every machine that commits. Commit messages are
 published too; a `commit-msg` hook can grep the message file against the same terms.
 
 Other sources to close:

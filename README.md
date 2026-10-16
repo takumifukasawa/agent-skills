@@ -158,3 +158,7 @@ description: when to use this skill (be concrete about triggering words)
 
 - [anthropics/skills](https://github.com/anthropics/skills) — official collection + spec (`spec/`) + template (`template/`). The conventions here follow this.
 - [mizchi/skills](https://github.com/mizchi/skills) — community collection distributed via APM.
+
+## License
+
+[MIT](./LICENSE)

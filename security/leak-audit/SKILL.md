@@ -24,6 +24,11 @@ Ask only if unclear; otherwise pick from context:
 Before any history scan, `git fetch --all --prune` (and `--tags`): the remote often has branches and commits the
 local clone has not seen, and those are what the public sees.
 
+All scripts are Python 3.8+ with git only, so they run the same on macOS, Linux and Windows. Call the interpreter
+explicitly (`python` / `python3` / `py`, whichever exists); the optional analysis packages come through `uv`
+(`uv run --with janome --with wordfreq python ...`), which needs no global install. If `uv` is missing, offer to
+install it (it is a single binary on every OS) or `pip install --user janome wordfreq`.
+
 ## 2. Collect the private terms
 
 The generic patterns cannot know the user's company, products, games, teammates or internal hosts — and those are
@@ -38,19 +43,53 @@ the leaks that matter most in a personal or work-adjacent repo. Before scanning:
 - Vendor names (ad / analytics / attribution SDKs, cloud projects) are worth a look too: in a "generic template"
   repo they reveal what business it came from. Add them to a one-off terms file and judge each hit.
 
+### 2b. Find what nobody listed (candidate extraction)
+
+People forget names, and a list only catches what is on it — a past project's asset name, a coined product name in
+katakana, a repo-slug abbreviation. Leaks are also not only names: an app id, a ticket key, a product's KPI, an
+unannounced date identify a product as well. So also mine the repo for candidates and review them:
+
+```bash
+uv run --with janome --with wordfreq python ${CLAUDE_SKILL_DIR}/scripts/find_candidates.py --history
+```
+
+It runs Japanese text through morphological analysis (janome: tagged proper nouns — person / org / place — and
+dictionary-unknown words, minus common loanwords) plus `株式会社X` patterns, and lists Latin-script words that are
+not common English (wordfreq): Capitalized, CamelCase, slugs (all slugs in prose, refs, file names and commit
+messages, since abbreviations like `xx-` look common to a frequency list), and every asset file name. It also
+lists reverse-DNS app ids (`com.<company>.<product>`), ticket keys (`PROJ-123`), lines with a number next to a
+business-metric word (`metric`: CPI, retention, ROAS, 売上, 予算 ...) and lines with a date next to a release /
+deadline word (`schedule`). Output is count / kind / term / first location.
+
+Then triage it — this is the part that needs judgment, and the list is long on the first run (hundreds of terms in
+a mid-size repo, mostly ordinary tech words and the repo's own vocabulary):
+1. Mark the obviously public ones yourself: programming terms, OSS / product names of public tools, the repo's own
+   skill / module names, generic loanwords.
+2. Show the user the rest, grouped by kind with where each appears, and ask which are private. Pay attention to
+   asset names, person names, katakana coinages, slugs that look like repo names, and concrete descriptions of an
+   unreleased product (its mechanics, UI, levels) — a description can identify a product without naming it.
+   A `metric` or `schedule` hit is private when it is a real product's number or plan; an illustrative value in a
+   labeled example is fine. Real numbers are fixed by rewording to a placeholder or a range.
+3. Private → append to the terms file (then step 3 checks every layer for them). Public → append to
+   `.public-check.known` (gitignored), so the next run shows only new candidates.
+
+
 ## 3. Scan
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/scan.sh --tree    [--terms FILE]
-${CLAUDE_SKILL_DIR}/scripts/scan.sh --history [--terms FILE]
+python ${CLAUDE_SKILL_DIR}/scripts/scan.py --tree    [--terms FILE]
+python ${CLAUDE_SKILL_DIR}/scripts/scan.py --history [--terms FILE]
 ```
 
 Run it from inside the target repo. It reports per rule: home paths, e-mails, private workspace links, token-shaped
-secrets, `password = "..."`-style assignments, internal hosts / private IPs, sensitive file names (`.env`, `id_rsa`,
-`*.pem`, `credentials.json`, ...) and private terms. History modes add commit messages, every file ever added, and
+secrets, `password = "..."`-style assignments, internal hosts / private IPs, ad / analytics ids (AdMob `ca-app-pub-`,
+GA `G-` / `UA-`, GTM, Meta pixel), cloud project hosts and ids (Firebase, App Engine, GCS / S3 buckets,
+`project_id`), chat ids (Slack mentions and channel ids), sensitive file names (`.env`, `id_rsa`, `*.pem`,
+`credentials.json`, ...) and private terms. `--tree` also prints INFO on metadata embedded in media files (EXIF /
+XMP / PNG text / PDF info: author, GPS, software, home paths). History modes add commit messages, every file ever added, and
 ref names (branches, tags, remote branches), cherry-pick provenance lines (`(cherry picked from commit <sha>)`
-points at a private repo), lockfile registry URLs that are not the public registry, and INFO lists of author /
-committer identities and of commits made in the GitHub web UI. Exit 1 means hits.
+points at a private repo), lockfile registry URLs that are not the public registry, and INFO lists of commit time zones,
+author / committer identities and commits made in the GitHub web UI. Exit 1 means hits.
 
 If `gitleaks` or `trufflehog` is installed, also run it (`gitleaks git -v .`) — they know hundreds of vendor token
 formats; this script knows the common ones plus the user's private terms, which those tools do not.
@@ -58,7 +97,16 @@ formats; this script knows the common ones plus the user's private terms, which 
 The script does not see everything. Also check, by hand:
 - **GitHub-side metadata**: PR titles, bodies and branch names, issues, releases
   (`gh pr list --state all --json number,title,headRefName,body`, `gh issue list --state all`, `gh release list`).
-- **Binary metadata**: images and documents can carry author / software / GPS tags (`exiftool -a -G1 <file>`).
+- **Binary metadata** beyond what the INFO list shows: `exiftool -a -G1 <file>` when installed; PSD layer names,
+  Office document properties, video metadata.
+- **What screenshots show**: a desktop, notifications, browser tabs, a user name, an internal tool's UI. Look at
+  each image that is not a pure in-app render.
+- **Rights, not secrecy**: code written for an employer or client (copyright may be theirs), paid assets / fonts /
+  music whose license forbids redistribution, a third party's words quoted verbatim (user feedback, chat logs).
+  Check that every bundled font / asset has a license that allows publishing, and ask the user about code that
+  came from work.
+- **Timestamps**: every commit publishes its time and UTC offset (INFO list). Usually acceptable; mention it when
+  the user wants anonymity, since the offset and working hours narrow down who and where.
 - **The tooling that writes into this repo**: if a script syncs or cherry-picks commits from a private repo into a
   public one, it is the source of leaks, not a one-off — look for the repo's basename in branch names,
   `cherry-pick -x`, and copied commit messages, and fix the script along with the history.
@@ -94,9 +142,9 @@ Read `references/remediation.md` for the full playbook. The decisions, in order:
 3. **Chase down every copy.** The rewritten remote does not reach copies that already exist: other machines' clones,
    forks, CI caches, package registries, and tool-managed clones such as Claude Code plugin marketplaces under
    `<config dir>/plugins/marketplaces/` and `<config dir>/plugins/cache/`. Check each and refetch or delete.
-4. **Verify**: re-run `scan.sh --history` on a fresh clone of the remote, and confirm the old commit id no longer
+4. **Verify**: re-run `scan.py --history` on a fresh clone of the remote, and confirm the old commit id no longer
    resolves (`git cat-file -t <old-sha>` fails) in every local copy you cleaned.
-5. **Prevent recurrence**: offer a pre-commit hook that runs `scan.sh --staged` with the terms file (see the
+5. **Prevent recurrence**: offer a pre-commit hook that runs `scan.py --staged` with the terms file (see the
    reference for a 3-line hook), and a gitignored terms file on each machine that commits.
 
 Actions that touch a remote (force push, deleting/recreating a repo) or delete local data are outward-facing and

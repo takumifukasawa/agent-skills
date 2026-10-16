@@ -233,7 +233,7 @@ also upscale chosen phone shots to 1440x2560 to keep the exact chosen frames.)
 `live` mode assumes the game's physics runs in headless. **It often doesn't.** A
 WebGL **bloom / postFX** pipeline can STALL the headless render+physics loop, so
 the subject freezes at its spawn (velocity is set but position never
-integrates) — every "live" frame comes out identical, ball stuck at the top.
+integrates) — every "live" frame comes out identical, the subject stuck at its spawn.
 This bit hard on a real project. Symptom to check first: probe the subject's
 `y` across two polls; if it never changes, physics is stalled.
 
@@ -242,13 +242,15 @@ When that happens, don't fight it — **drive the subject by hand**:
 `node ${CLAUDE_SKILL_DIR}/scripts/pose-capture.cjs <config.(cjs|json)> [outDir]`
 
 Each shot pauses the world, then animates the subject along a path YOU define
-over N frames (with the trail emitter running), so a real moving-ball trail
+over N frames (with any trail / particle emitter running), so a real motion trail
 builds up regardless of physics. Config per shot: `{name, setup, poseAt(t),
-steps, stepMs}` — `setup` runs once (spawn the gate, `state="playing"`,
-`world.pause()`, `trail.start()`, hide the ready-hint, set a score), `poseAt(t)`
+steps, stepMs}` — `setup` runs once and puts the scene in the shot's state (e.g. in a
+ball-and-gate game: spawn the gate, `state="playing"`, `world.pause()`,
+`trail.start()`, hide the ready-hint, set a score), `poseAt(t)`
 positions the subject for `t` in `[0..1]`.
 
-Two things make the posed trail read as a real fall:
+What makes a posed trail read as real motion (the example game's subject falls
+under gravity; adapt to how yours moves):
 - **Bezier path, not a straight lerp.** A straight path makes a stiff, ruler-
   straight trail; a quadratic bezier with a sideways control-point offset gives
   the natural curved arc the game actually produces. Vary the curve per shot.
